@@ -429,4 +429,248 @@ void main() {
       lessThanOrEqualTo(170),
     );
   });
+
+  test('auto placement escolhe uma colocacao permitida com menor overflow',
+      () async {
+    final reference = mountBox(
+      left: 90,
+      top: 130,
+      width: 30,
+      height: 20,
+    );
+    final floating = mountBox(
+      left: 0,
+      top: 0,
+      width: 80,
+      height: 50,
+    );
+
+    js_util.setProperty(
+      html.window,
+      '__popperTestVisualViewport',
+      js_util.jsify(<String, double>{
+        'width': 220,
+        'height': 180,
+        'offsetLeft': 0,
+        'offsetTop': 0,
+      }),
+    );
+
+    final layout = await computePopperLayout(
+      referenceElement: reference,
+      floatingElement: floating,
+      options: const PopperOptions(
+        placement: 'auto',
+        strategy: PopperStrategy.fixed,
+        boundary: PopperBoundary.viewport,
+        allowedAutoPlacements: <String>['top', 'bottom'],
+      ),
+    );
+
+    expect(layout.placement, equals('top'));
+  });
+
+  test('arrow middleware produz dados e controller posiciona o elemento seta',
+      () async {
+    final reference = mountBox(
+      left: 120,
+      top: 80,
+      width: 100,
+      height: 30,
+    );
+    final floating = mountBox(
+      left: 0,
+      top: 0,
+      width: 120,
+      height: 60,
+    );
+    final arrow = mountChild(
+      floating,
+      left: 0,
+      top: 0,
+      width: 12,
+      height: 12,
+    );
+
+    final layout = await computePopperLayout(
+      referenceElement: reference,
+      floatingElement: floating,
+      options: PopperOptions(
+        placement: 'bottom',
+        strategy: PopperStrategy.fixed,
+        arrowElement: arrow,
+      ),
+    );
+
+    expect(layout.middlewareData['arrow'], contains('x'));
+
+    final controller = PopperController(
+      referenceElement: reference,
+      floatingElement: floating,
+      options: PopperOptions(
+        placement: 'bottom',
+        strategy: PopperStrategy.fixed,
+        arrowElement: arrow,
+      ),
+    );
+
+    await controller.update();
+
+    expect(arrow.style.left, isNotEmpty);
+    expect(arrow.style.top, isNotEmpty);
+  });
+
+  test('controller aplica largura, minWidth e oculta quando destacado',
+      () async {
+    final reference = mountBox(
+      left: -240,
+      top: -180,
+      width: 90,
+      height: 24,
+    );
+    final floating = mountBox(
+      left: 0,
+      top: 0,
+      width: 40,
+      height: 20,
+    );
+
+    final controller = PopperController(
+      referenceElement: reference,
+      floatingElement: floating,
+      options: const PopperOptions(
+        placement: 'bottom-start',
+        strategy: PopperStrategy.fixed,
+        boundary: PopperBoundary.viewport,
+        matchReferenceWidth: true,
+        matchReferenceMinWidth: true,
+        hideWhenDetached: true,
+      ),
+    );
+
+    final layout = await controller.update();
+
+    expect(layout, isNotNull);
+    expect(floating.style.width, '90px');
+    expect(floating.style.minWidth, '90px');
+    expect(floating.style.visibility, 'hidden');
+    expect(floating.style.pointerEvents, 'none');
+    expect(floating.attributes, contains('data-popper-reference-hidden'));
+  });
+
+  test('controller inicia auto update, observa mutacoes e para corretamente',
+      () async {
+    final reference = mountBox(
+      left: 40,
+      top: 40,
+      width: 80,
+      height: 24,
+    );
+    final floating = mountBox(
+      left: 0,
+      top: 0,
+      width: 50,
+      height: 20,
+    );
+
+    var layoutCalls = 0;
+    final controller = PopperController(
+      referenceElement: reference,
+      floatingElement: floating,
+      options: PopperOptions(
+        placement: 'bottom',
+        strategy: PopperStrategy.fixed,
+        onLayout: (_) {
+          layoutCalls++;
+        },
+      ),
+    );
+
+    controller.startAutoUpdate();
+    await nextFrame();
+    expect(layoutCalls, greaterThan(0));
+
+    final callsAfterStart = layoutCalls;
+    reference.append(html.SpanElement()..text = 'mutation');
+    await nextFrame();
+    await nextFrame();
+    expect(layoutCalls, greaterThan(callsAfterStart));
+
+    controller.stopAutoUpdate();
+    final callsAfterStop = layoutCalls;
+    reference.append(html.SpanElement()..text = 'ignored');
+    await nextFrame();
+    await nextFrame();
+    expect(layoutCalls, equals(callsAfterStop));
+
+    controller.dispose();
+    final layout = await controller.update();
+    expect(layout, isNull);
+  });
+
+  test('portal e anchored overlay ancoram e descartam corretamente',
+      () async {
+    final originalParent = mountBox(
+      left: 0,
+      top: 0,
+      width: 300,
+      height: 200,
+      position: 'absolute',
+    );
+    final reference = mountChild(
+      originalParent,
+      left: 30,
+      top: 20,
+      width: 60,
+      height: 20,
+    );
+    final floating = mountChild(
+      originalParent,
+      left: 0,
+      top: 0,
+      width: 80,
+      height: 40,
+    );
+
+    final portal = PopperPortal.attach(
+      floatingElement: floating,
+      options: const PopperPortalOptions(
+        hostClassName: 'test-portal-host',
+        restoreOnDispose: true,
+      ),
+    );
+
+    expect(portal.hostElement.classes.contains('test-portal-host'), isTrue);
+    expect(floating.parent, same(portal.hostElement));
+
+    portal.dispose();
+
+    expect(floating.parent, same(originalParent));
+    expect(portal.hostElement.isConnected, isFalse);
+
+    final overlay = PopperAnchoredOverlay.attach(
+      referenceElement: reference,
+      floatingElement: floating,
+      popperOptions: const PopperOptions(
+        placement: 'bottom-start',
+        strategy: PopperStrategy.fixed,
+      ),
+      portalOptions: const PopperPortalOptions(
+        restoreOnDispose: true,
+      ),
+    );
+
+    expect(floating.parent, same(overlay.portal.hostElement));
+
+    final layout = await overlay.update();
+    expect(layout, isNotNull);
+
+    overlay.startAutoUpdate();
+    await nextFrame();
+    overlay.stopAutoUpdate();
+    overlay.dispose();
+
+    expect(floating.parent, same(originalParent));
+    expect(overlay.portal.hostElement.isConnected, isFalse);
+  });
 }

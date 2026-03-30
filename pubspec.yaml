@@ -1,14 +1,21 @@
 name: popper
-description: A starting point for Dart libraries or applications.
+description: Floating UI and Popper-style positioning for Dart web apps, with middleware, auto update, portals, and anchored overlays.
 version: 1.0.0
-# repository: https://github.com/my_org/my_repo
+repository: https://github.com/insinfo/popper_dart.git
+issue_tracker: https://github.com/insinfo/popper_dart/issues
+topics:
+  - popover
+  - tooltip
+  - overlay
+  - position
+  - web
 
 environment:
   sdk: ^3.6.2
 
-# Add regular dependencies here.
+
 dependencies:
-  # path: ^1.8.0
+
 
 dev_dependencies:
   lints: ^5.0.0
