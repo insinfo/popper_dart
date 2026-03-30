@@ -1,5 +1,7 @@
 # Popper
 
+[![Dart CI](https://github.com/insinfo/popper_dart/actions/workflows/dart_ci.yml/badge.svg)](https://github.com/insinfo/popper_dart/actions/workflows/dart_ci.yml)
+
 A powerful and flexible positioning engine for Dart HTML, inspired by Popper.js and Floating UI.
 
 It calculates the absolute or fixed X and Y coordinates needed to position a "floating" element (like a tooltip, popover, or dropdown) next to a "reference" element, while intelligently keeping it in view.

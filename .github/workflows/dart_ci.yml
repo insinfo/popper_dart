@@ -17,7 +17,7 @@ jobs:
       - name: Set up Dart
         uses: dart-lang/setup-dart@v1
         with:
-          sdk: stable
+          sdk: 3.6.2
 
       - name: Set up Chrome
         uses: browser-actions/setup-chrome@v1
