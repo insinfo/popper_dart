@@ -520,6 +520,272 @@ void main() {
     expect(arrow.style.top, isNotEmpty);
   });
 
+  test('arrowWriteMode crossAxisOnly nao escreve o eixo principal da seta',
+      () async {
+    final reference = mountBox(
+      left: 120,
+      top: 80,
+      width: 100,
+      height: 30,
+    );
+    final floating = mountBox(
+      left: 0,
+      top: 0,
+      width: 120,
+      height: 60,
+    );
+    final arrow = mountChild(
+      floating,
+      left: 0,
+      top: 0,
+      width: 12,
+      height: 12,
+    );
+
+    final controller = PopperController(
+      referenceElement: reference,
+      floatingElement: floating,
+      options: PopperOptions(
+        placement: 'bottom',
+        strategy: PopperStrategy.fixed,
+        arrowElement: arrow,
+        arrowWriteMode: PopperArrowWriteMode.crossAxisOnly,
+      ),
+    );
+
+    await controller.update();
+
+    expect(arrow.style.left, isNotEmpty);
+    expect(arrow.style.top, isEmpty);
+    expect(arrow.style.bottom, isEmpty);
+  });
+
+  test('arrowWriteMode none nao escreve estilos inline na seta', () async {
+    final reference = mountBox(
+      left: 120,
+      top: 80,
+      width: 100,
+      height: 30,
+    );
+    final floating = mountBox(
+      left: 0,
+      top: 0,
+      width: 120,
+      height: 60,
+    );
+    final arrow = mountChild(
+      floating,
+      left: 0,
+      top: 0,
+      width: 12,
+      height: 12,
+    );
+
+    final controller = PopperController(
+      referenceElement: reference,
+      floatingElement: floating,
+      options: PopperOptions(
+        placement: 'bottom',
+        strategy: PopperStrategy.fixed,
+        arrowElement: arrow,
+        arrowWriteMode: PopperArrowWriteMode.none,
+      ),
+    );
+
+    await controller.update();
+
+    expect(arrow.style.position, isEmpty);
+    expect(arrow.style.left, isEmpty);
+    expect(arrow.style.top, isEmpty);
+    expect(arrow.style.right, isEmpty);
+    expect(arrow.style.bottom, isEmpty);
+  });
+
+  test('applyPopperLayout permite separar compute de apply', () async {
+    final reference = mountBox(
+      left: 120,
+      top: 80,
+      width: 100,
+      height: 30,
+    );
+    final floating = mountBox(
+      left: 0,
+      top: 0,
+      width: 120,
+      height: 60,
+    );
+
+    final controller = PopperController(
+      referenceElement: reference,
+      floatingElement: floating,
+      options: const PopperOptions(
+        placement: 'bottom',
+        strategy: PopperStrategy.fixed,
+      ),
+    );
+    final layout = await computePopperLayout(
+      referenceElement: reference,
+      floatingElement: floating,
+      options: controller.options,
+    );
+
+    controller.applyPopperLayout(layout);
+
+    expect(floating.style.position, 'fixed');
+    expect(floating.style.transform, contains('translate('));
+  });
+
+  test('anchorRectBuilder permite estabilizar o retangulo de referencia',
+      () async {
+    final reference = mountBox(
+      left: 150,
+      top: 100,
+      width: 50,
+      height: 20,
+    );
+    final floating = mountBox(
+      left: 0,
+      top: 0,
+      width: 80,
+      height: 40,
+    );
+
+    final layout = await computePopperLayout(
+      referenceElement: reference,
+      floatingElement: floating,
+      options: PopperOptions(
+        placement: 'bottom',
+        strategy: PopperStrategy.fixed,
+        anchorRectBuilder: (_, __) => html.Rectangle<num>(20, 30, 100, 10),
+      ),
+    );
+
+    expectClose(layout.referenceRect.left, 20);
+    expectClose(layout.referenceRect.top, 30);
+    expectClose(layout.referenceRect.width, 100);
+    expectClose(layout.referenceRect.height, 10);
+    expectClose(layout.viewportX, 30);
+    expectClose(layout.viewportY, 40);
+  });
+
+  test('layoutWriter substitui a escrita padrao do controller', () async {
+    final reference = mountBox(
+      left: 120,
+      top: 80,
+      width: 100,
+      height: 30,
+    );
+    final floating = mountBox(
+      left: 0,
+      top: 0,
+      width: 120,
+      height: 60,
+    );
+    final arrow = mountChild(
+      floating,
+      left: 0,
+      top: 0,
+      width: 12,
+      height: 12,
+    );
+
+    var writerCalled = false;
+    final controller = PopperController(
+      referenceElement: reference,
+      floatingElement: floating,
+      options: PopperOptions(
+        placement: 'bottom',
+        strategy: PopperStrategy.fixed,
+        arrowElement: arrow,
+        layoutWriter: (layout, floatingElement, arrowElement) {
+          writerCalled = true;
+          floatingElement.style.transform =
+              'translateX(${layout.x.toStringAsFixed(0)}px)';
+          arrowElement?.setAttribute('data-writer', layout.placement);
+        },
+      ),
+    );
+
+    await controller.update();
+
+    expect(writerCalled, isTrue);
+    expect(floating.style.transform, startsWith('translateX('));
+    expect(floating.getAttribute('data-popper-placement'), isNull);
+    expect(arrow.getAttribute('data-writer'), 'bottom');
+  });
+
+  test('arrowLayoutWriter substitui apenas a escrita da seta', () async {
+    final reference = mountBox(
+      left: 120,
+      top: 80,
+      width: 100,
+      height: 30,
+    );
+    final floating = mountBox(
+      left: 0,
+      top: 0,
+      width: 120,
+      height: 60,
+    );
+    final arrow = mountChild(
+      floating,
+      left: 0,
+      top: 0,
+      width: 12,
+      height: 12,
+    );
+
+    var writerCalled = false;
+    final controller = PopperController(
+      referenceElement: reference,
+      floatingElement: floating,
+      options: PopperOptions(
+        placement: 'bottom',
+        strategy: PopperStrategy.fixed,
+        arrowElement: arrow,
+        arrowLayoutWriter: (layout, arrowElement) {
+          writerCalled = true;
+          arrowElement.style
+            ..position = 'absolute'
+            ..left = '7px'
+            ..top = ''
+            ..right = ''
+            ..bottom = '';
+          arrowElement.setAttribute('data-arrow-writer', layout.placement);
+        },
+      ),
+    );
+
+    await controller.update();
+
+    expect(writerCalled, isTrue);
+    expect(floating.style.transform, contains('translate('));
+    expect(floating.getAttribute('data-popper-placement'), 'bottom');
+    expect(arrow.style.left, '7px');
+    expect(arrow.getAttribute('data-arrow-writer'), 'bottom');
+  });
+
+  test('copyWith permite ajustar opcoes sem reconstruir manualmente', () {
+    final base = const PopperOptions(
+      placement: 'bottom',
+      strategy: PopperStrategy.fixed,
+      shift: true,
+    );
+
+    final next = base.copyWith(
+      placement: 'top',
+      arrowWriteMode: PopperArrowWriteMode.crossAxisOnly,
+      shift: false,
+    );
+
+    expect(next.placement, 'top');
+    expect(next.strategy, PopperStrategy.fixed);
+    expect(next.shift, isFalse);
+    expect(next.arrowWriteMode, PopperArrowWriteMode.crossAxisOnly);
+    expect(base.placement, 'bottom');
+    expect(base.shift, isTrue);
+  });
+
   test('controller aplica largura, minWidth e oculta quando destacado',
       () async {
     final reference = mountBox(
@@ -608,8 +874,7 @@ void main() {
     expect(layout, isNull);
   });
 
-  test('portal e anchored overlay ancoram e descartam corretamente',
-      () async {
+  test('portal e anchored overlay ancoram e descartam corretamente', () async {
     final originalParent = mountBox(
       left: 0,
       top: 0,

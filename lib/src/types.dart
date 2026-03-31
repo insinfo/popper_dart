@@ -17,6 +17,12 @@ enum PopperVisibility {
   escaped,
 }
 
+enum PopperArrowWriteMode {
+  full,
+  crossAxisOnly,
+  none,
+}
+
 class PopperInsets {
   final double top;
   final double right;
@@ -116,6 +122,19 @@ class PopperLayout {
 }
 
 typedef PopperLayoutCallback = void Function(PopperLayout layout);
+typedef PopperAnchorRectBuilder = html.Rectangle<num> Function(
+  html.Element referenceElement,
+  html.Element floatingElement,
+);
+typedef PopperLayoutWriter = void Function(
+  PopperLayout layout,
+  html.Element floatingElement,
+  html.Element? arrowElement,
+);
+typedef PopperArrowLayoutWriter = void Function(
+  PopperLayout layout,
+  html.Element arrowElement,
+);
 
 class PopperComputeResult {
   final double x;
@@ -254,8 +273,12 @@ class PopperOptions {
   final bool observeMutations;
   final html.Element? arrowElement;
   final PopperInsets arrowPadding;
+  final PopperArrowWriteMode arrowWriteMode;
+  final PopperAnchorRectBuilder? anchorRectBuilder;
   final bool inline;
   final List<PopperMiddleware> middleware;
+  final PopperLayoutWriter? layoutWriter;
+  final PopperArrowLayoutWriter? arrowLayoutWriter;
   final PopperLayoutCallback? onLayout;
 
   const PopperOptions({
@@ -280,10 +303,82 @@ class PopperOptions {
     this.observeMutations = true,
     this.arrowElement,
     this.arrowPadding = const PopperInsets.all(8),
+    this.arrowWriteMode = PopperArrowWriteMode.full,
+    this.anchorRectBuilder,
     this.inline = false,
     this.middleware = const <PopperMiddleware>[],
+    this.layoutWriter,
+    this.arrowLayoutWriter,
     this.onLayout,
   });
+
+  PopperOptions copyWith({
+    String? placement,
+    List<String>? fallbackPlacements,
+    List<String>? allowedAutoPlacements,
+    PopperStrategy? strategy,
+    PopperBoundary? boundary,
+    PopperInsets? padding,
+    PopperOffset? offset,
+    bool? flip,
+    bool? shift,
+    bool? shiftCrossAxis,
+    bool? matchReferenceWidth,
+    bool? matchReferenceMinWidth,
+    bool? hideWhenDetached,
+    bool? roundByDevicePixelRatio,
+    bool? observeMutations,
+    html.Element? arrowElement,
+    bool clearArrowElement = false,
+    PopperInsets? arrowPadding,
+    PopperArrowWriteMode? arrowWriteMode,
+    PopperAnchorRectBuilder? anchorRectBuilder,
+    bool clearAnchorRectBuilder = false,
+    bool? inline,
+    List<PopperMiddleware>? middleware,
+    PopperLayoutWriter? layoutWriter,
+    bool clearLayoutWriter = false,
+    PopperArrowLayoutWriter? arrowLayoutWriter,
+    bool clearArrowLayoutWriter = false,
+    PopperLayoutCallback? onLayout,
+    bool clearOnLayout = false,
+  }) {
+    return PopperOptions(
+      placement: placement ?? this.placement,
+      fallbackPlacements: fallbackPlacements ?? this.fallbackPlacements,
+      allowedAutoPlacements:
+          allowedAutoPlacements ?? this.allowedAutoPlacements,
+      strategy: strategy ?? this.strategy,
+      boundary: boundary ?? this.boundary,
+      padding: padding ?? this.padding,
+      offset: offset ?? this.offset,
+      flip: flip ?? this.flip,
+      shift: shift ?? this.shift,
+      shiftCrossAxis: shiftCrossAxis ?? this.shiftCrossAxis,
+      matchReferenceWidth: matchReferenceWidth ?? this.matchReferenceWidth,
+      matchReferenceMinWidth:
+          matchReferenceMinWidth ?? this.matchReferenceMinWidth,
+      hideWhenDetached: hideWhenDetached ?? this.hideWhenDetached,
+      roundByDevicePixelRatio:
+          roundByDevicePixelRatio ?? this.roundByDevicePixelRatio,
+      observeMutations: observeMutations ?? this.observeMutations,
+      arrowElement:
+          clearArrowElement ? null : (arrowElement ?? this.arrowElement),
+      arrowPadding: arrowPadding ?? this.arrowPadding,
+      arrowWriteMode: arrowWriteMode ?? this.arrowWriteMode,
+      anchorRectBuilder: clearAnchorRectBuilder
+          ? null
+          : (anchorRectBuilder ?? this.anchorRectBuilder),
+      inline: inline ?? this.inline,
+      middleware: middleware ?? this.middleware,
+      layoutWriter:
+          clearLayoutWriter ? null : (layoutWriter ?? this.layoutWriter),
+      arrowLayoutWriter: clearArrowLayoutWriter
+          ? null
+          : (arrowLayoutWriter ?? this.arrowLayoutWriter),
+      onLayout: clearOnLayout ? null : (onLayout ?? this.onLayout),
+    );
+  }
 }
 
 class PopperPortalOptions {

@@ -16,7 +16,7 @@ dart pub add popper
 
 ```yaml
 dependencies:
-  popper: ^1.0.0
+  popper: ^1.1.0
 ```
 
 ## Features
@@ -123,8 +123,42 @@ void main() {
 - `shift`: Keeps the floating element inside the clipping area.
 - `inline`: Uses the union of client rects for multi-line inline references.
 - `arrowElement`: Enables arrow positioning and exposes arrow data in `middlewareData['arrow']`.
+- `arrowWriteMode`: Controls whether Popper writes the arrow on both axes (`full`), only on the cross axis (`crossAxisOnly`), or leaves arrow styling to your CSS (`none`).
+- `anchorRectBuilder`: Overrides how the reference rectangle is measured, useful when focus/hover states slightly change the anchor geometry.
+- `layoutWriter`: Replaces the default DOM writer so you can apply `PopperLayout` with your own CSS policy.
+- `arrowLayoutWriter`: Replaces only the arrow writer while preserving the default floating element writer.
 - `matchReferenceWidth` and `matchReferenceMinWidth`: Apply the reference width to the floating element.
 - `hideWhenDetached`: Hides the floating element when the reference is clipped or the floating element escapes.
+
+For theme-driven arrows such as Bootstrap popovers, prefer `arrowWriteMode: PopperArrowWriteMode.crossAxisOnly` so Popper still centers the arrow without overriding theme-controlled `top`/`right`/`bottom`/`left` values on the main axis.
+
+`computePopperLayout` already exposes the pure layout result. If you want to split compute from apply in controller-driven flows, compute the layout yourself and call `controller.applyPopperLayout(layout)` only when you are ready to write styles.
+
+When the reference element visually shifts between states, pass `anchorRectBuilder` to stabilize the measured anchor independently from the DOM element's current `getBoundingClientRect()`.
+
+When integrating with strong CSS frameworks, pass `layoutWriter` to fully control which inline styles get written to the floating element and arrow.
+
+If you only need to customize arrow styles, prefer `arrowLayoutWriter`. This lets Popper keep applying the floating element layout while you decide exactly how the arrow should be written.
+
+```dart
+final controller = PopperController(
+  referenceElement: reference,
+  floatingElement: floating,
+  options: PopperOptions(
+    placement: 'bottom',
+    arrowElement: arrow,
+    arrowLayoutWriter: (layout, arrowElement) {
+      final arrowData = layout.middlewareData['arrow'] ?? const <String, dynamic>{};
+      arrowElement.style
+        ..position = 'absolute'
+        ..left = '${(arrowData['x'] as num?)?.toStringAsFixed(2) ?? '0.00'}px'
+        ..top = ''
+        ..right = ''
+        ..bottom = '';
+    },
+  ),
+);
+```
 
 ## Lifecycle Notes
 

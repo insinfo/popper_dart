@@ -122,6 +122,12 @@ Future<PopperMiddlewareState> _runMiddlewarePipeline({
 }) async {
   final rtl = _isRTL(floatingElement);
   final initialPlacement = placement;
+  final initialReferenceRect = _resolveReferenceRect(
+    referenceElement: referenceElement,
+    floatingElement: floatingElement,
+    options: options,
+  );
+  final initialFloatingRect = _measureRect(floatingElement);
 
   final state = PopperMiddlewareState(
     referenceElement: referenceElement,
@@ -135,8 +141,8 @@ Future<PopperMiddlewareState> _runMiddlewarePipeline({
     y: 0,
     placement: placement,
     rects: PopperRects(
-      reference: _measureRect(referenceElement),
-      floating: _measureRect(floatingElement),
+      reference: initialReferenceRect,
+      floating: initialFloatingRect,
     ),
     clippingRect: _getClippingRect(
       referenceElement: referenceElement,
@@ -194,7 +200,11 @@ Future<PopperMiddlewareState> _runMiddlewarePipeline({
       state.rects = reset.rects!;
     } else if (reset.recalculateRects) {
       state.rects = PopperRects(
-        reference: _measureRect(referenceElement),
+        reference: _resolveReferenceRect(
+          referenceElement: referenceElement,
+          floatingElement: floatingElement,
+          options: options,
+        ),
         floating: _measureRect(floatingElement),
       );
     }
@@ -210,6 +220,19 @@ Future<PopperMiddlewareState> _runMiddlewarePipeline({
   }
 
   return state;
+}
+
+html.Rectangle<num> _resolveReferenceRect({
+  required html.Element referenceElement,
+  required html.Element floatingElement,
+  required PopperOptions options,
+}) {
+  final customRect =
+      options.anchorRectBuilder?.call(referenceElement, floatingElement);
+  if (customRect != null) {
+    return _cloneRect(customRect);
+  }
+  return _measureRect(referenceElement);
 }
 
 List<PopperMiddleware> _buildMiddleware(PopperOptions options) {
