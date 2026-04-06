@@ -938,4 +938,67 @@ void main() {
     expect(floating.parent, same(originalParent));
     expect(overlay.portal.hostElement.isConnected, isFalse);
   });
+
+  test(
+      'anchored overlay alinha bottom-start corretamente ao abrir elemento inicialmente oculto',
+      () async {
+    final originalParent = mountBox(
+      left: 0,
+      top: 0,
+      width: 500,
+      height: 400,
+      position: 'absolute',
+    );
+    final reference = mountChild(
+      originalParent,
+      left: 140,
+      top: 120,
+      width: 180,
+      height: 38,
+    );
+    final floating = mountChild(
+      originalParent,
+      left: 0,
+      top: 0,
+      width: 120,
+      height: 160,
+      extraStyle:
+          'display: none; padding: 5px 0; border: 1px solid rgba(0,0,0,.15); '
+          'background: white; box-sizing: border-box;',
+    );
+
+    final search = html.DivElement()
+      ..style.margin = '8px'
+      ..style.height = '40px';
+    floating.append(search);
+    mounted.add(search);
+
+    final overlay = PopperAnchoredOverlay.attach(
+      referenceElement: reference,
+      floatingElement: floating,
+      popperOptions: const PopperOptions(
+        placement: 'bottom-start',
+        strategy: PopperStrategy.fixed,
+        matchReferenceWidth: true,
+      ),
+      portalOptions: const PopperPortalOptions(
+        restoreOnDispose: true,
+      ),
+    );
+
+    overlay.startAutoUpdate();
+    floating.style.display = 'block';
+    await nextFrame();
+    await overlay.update();
+    await nextFrame();
+
+    final referenceRect = reference.getBoundingClientRect();
+    final floatingRect = floating.getBoundingClientRect();
+
+    expectClose(floatingRect.left, referenceRect.left);
+    expectClose(floatingRect.top, referenceRect.bottom);
+    expectClose(floatingRect.width, referenceRect.width);
+
+    overlay.dispose();
+  });
 }
