@@ -13,11 +13,21 @@ class PopperController {
   bool _autoUpdateEnabled = false;
   bool _updateQueued = false;
 
+  /// Captured eagerly: the element must be snapshotted before the first layout
+  /// is written, so `dispose()` can hand it back in its pre-Popper state.
+  late final _PopperOwnedState _floatingState;
+
   PopperController({
     required this.referenceElement,
     required this.floatingElement,
     this.options = const PopperOptions(),
-  });
+  }) {
+    _floatingState = _PopperOwnedState.capture(
+      floatingElement,
+      styleProperties: _popperLayoutOwnedStyles,
+      attributes: _popperLayoutOwnedAttributes,
+    );
+  }
 
   Future<PopperLayout?> update() async {
     if (_disposed) {
@@ -107,6 +117,7 @@ class PopperController {
     }
 
     stopAutoUpdate();
+    _floatingState.restore();
     _disposed = true;
   }
 

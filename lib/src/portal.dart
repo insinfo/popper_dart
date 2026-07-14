@@ -5,6 +5,7 @@ class PopperPortal {
   final html.Element floatingElement;
   final html.Element? _originalParent;
   final bool _restoreOnDispose;
+  final _PopperOwnedState _floatingState;
   bool _disposed = false;
 
   PopperPortal._({
@@ -12,8 +13,10 @@ class PopperPortal {
     required this.floatingElement,
     required html.Element? originalParent,
     required bool restoreOnDispose,
+    required _PopperOwnedState floatingState,
   })  : _originalParent = originalParent,
-        _restoreOnDispose = restoreOnDispose;
+        _restoreOnDispose = restoreOnDispose,
+        _floatingState = floatingState;
 
   factory PopperPortal.attach({
     required html.Element floatingElement,
@@ -29,6 +32,10 @@ class PopperPortal {
     hostElement.style.zIndex = options.hostZIndex;
 
     final originalParent = floatingElement.parent;
+    final floatingState = _PopperOwnedState.capture(
+      floatingElement,
+      styleProperties: _popperPortalOwnedStyles,
+    );
     html.document.body?.append(hostElement);
 
     floatingElement.style.position = 'fixed';
@@ -41,6 +48,7 @@ class PopperPortal {
       floatingElement: floatingElement,
       originalParent: originalParent,
       restoreOnDispose: options.restoreOnDispose,
+      floatingState: floatingState,
     );
   }
 
@@ -52,6 +60,7 @@ class PopperPortal {
     if (_restoreOnDispose && _originalParent != null) {
       _originalParent.append(floatingElement);
     }
+    _floatingState.restore();
 
     hostElement.remove();
     _disposed = true;

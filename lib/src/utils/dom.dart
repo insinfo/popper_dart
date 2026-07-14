@@ -1,5 +1,93 @@
 part of '../../popper.dart';
 
+/// Inline styles `PopperPortal.attach` takes over on the floating element.
+const List<String> _popperPortalOwnedStyles = <String>[
+  'position',
+  'pointer-events',
+  'z-index',
+];
+
+/// Inline styles `PopperController.applyPopperLayout` takes over on the
+/// floating element.
+const List<String> _popperLayoutOwnedStyles = <String>[
+  'position',
+  'left',
+  'top',
+  'right',
+  'bottom',
+  'margin',
+  'transform',
+  'width',
+  'min-width',
+  'visibility',
+  'pointer-events',
+  '--popper-available-width',
+  '--popper-available-height',
+];
+
+/// Attributes `PopperController.applyPopperLayout` takes over on the floating
+/// element.
+const List<String> _popperLayoutOwnedAttributes = <String>[
+  'data-popper-placement',
+  'data-popper-reference-hidden',
+  'data-popper-escaped',
+];
+
+/// Snapshot of the element state Popper takes ownership of, so `dispose()` can
+/// hand the element back exactly as it was found.
+///
+/// Popper positions by writing inline styles, which outrank any stylesheet. An
+/// element handed back still carrying them (`position: fixed` plus a stale
+/// `transform`) keeps rendering at the last computed viewport coordinates
+/// instead of falling back to its own CSS.
+///
+/// Restoring the captured values rather than blanket-clearing preserves inline
+/// styles the consumer had set before Popper attached.
+class _PopperOwnedState {
+  _PopperOwnedState._(this._element, this._styles, this._attributes);
+
+  final html.Element _element;
+  final Map<String, String> _styles;
+  final Map<String, String?> _attributes;
+
+  factory _PopperOwnedState.capture(
+    html.Element element, {
+    List<String> styleProperties = const <String>[],
+    List<String> attributes = const <String>[],
+  }) {
+    final styles = <String, String>{};
+    for (final property in styleProperties) {
+      styles[property] = element.style.getPropertyValue(property);
+    }
+
+    final capturedAttributes = <String, String?>{};
+    for (final attribute in attributes) {
+      capturedAttributes[attribute] = element.getAttribute(attribute);
+    }
+
+    return _PopperOwnedState._(element, styles, capturedAttributes);
+  }
+
+  void restore() {
+    for (final entry in _styles.entries) {
+      if (entry.value.isEmpty) {
+        _element.style.removeProperty(entry.key);
+      } else {
+        _element.style.setProperty(entry.key, entry.value);
+      }
+    }
+
+    for (final entry in _attributes.entries) {
+      final value = entry.value;
+      if (value == null) {
+        _element.attributes.remove(entry.key);
+      } else {
+        _element.setAttribute(entry.key, value);
+      }
+    }
+  }
+}
+
 html.Rectangle<num> _measureRect(html.Element element) {
   final rect = element.getBoundingClientRect();
   if (rect.width.toDouble() > 0 || rect.height.toDouble() > 0) {

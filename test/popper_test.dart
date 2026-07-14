@@ -939,6 +939,207 @@ void main() {
     expect(overlay.portal.hostElement.isConnected, isFalse);
   });
 
+  test('anchored overlay devolve estilos e atributos do elemento ao descartar',
+      () async {
+    final originalParent = mountBox(
+      left: 0,
+      top: 0,
+      width: 300,
+      height: 200,
+      position: 'absolute',
+    );
+    final reference = mountChild(
+      originalParent,
+      left: 30,
+      top: 20,
+      width: 60,
+      height: 20,
+    );
+
+    // Sem estilos de posicionamento proprios: o elemento depende do CSS/fluxo
+    // normal quando o popper nao esta ancorando.
+    final floating = html.DivElement()
+      ..style.width = '80px'
+      ..style.height = '40px';
+    originalParent.append(floating);
+    mounted.add(floating);
+
+    final overlay = PopperAnchoredOverlay.attach(
+      referenceElement: reference,
+      floatingElement: floating,
+      popperOptions: const PopperOptions(
+        placement: 'bottom-start',
+        strategy: PopperStrategy.fixed,
+      ),
+      portalOptions: const PopperPortalOptions(
+        floatingZIndex: '1056',
+        restoreOnDispose: true,
+      ),
+    );
+
+    await overlay.update();
+
+    expect(floating.style.position, 'fixed');
+    expect(floating.style.transform, isNotEmpty);
+    expect(floating.style.zIndex, '1056');
+    expect(floating.getAttribute('data-popper-placement'), isNotNull);
+
+    overlay.dispose();
+
+    // O elemento volta para o pai original sem os estilos inline do popper.
+    // Mante-los faz o elemento continuar renderizando nas ultimas coordenadas
+    // de viewport calculadas, ignorando o proprio CSS.
+    expect(floating.parent, same(originalParent));
+    expect(floating.style.position, isEmpty);
+    expect(floating.style.transform, isEmpty);
+    expect(floating.style.left, isEmpty);
+    expect(floating.style.top, isEmpty);
+    expect(floating.style.right, isEmpty);
+    expect(floating.style.bottom, isEmpty);
+    expect(floating.style.margin, isEmpty);
+    expect(floating.style.zIndex, isEmpty);
+    expect(floating.style.pointerEvents, isEmpty);
+    expect(floating.style.visibility, isEmpty);
+    expect(floating.style.getPropertyValue('--popper-available-width'), isEmpty);
+    expect(floating.getAttribute('data-popper-placement'), isNull);
+
+    // Estilos proprios do consumidor sobrevivem ao ciclo attach/dispose.
+    expect(floating.style.width, '80px');
+    expect(floating.style.height, '40px');
+  });
+
+  test('elemento devolvido volta a seguir o fluxo normal apos descartar',
+      () async {
+    final originalParent = mountBox(
+      left: 0,
+      top: 0,
+      width: 300,
+      height: 200,
+      position: 'absolute',
+    );
+    // Referencia distante do pai para que a posicao ancorada seja claramente
+    // diferente da posicao de fluxo normal.
+    final reference = mountBox(
+      left: 400,
+      top: 300,
+      width: 60,
+      height: 20,
+    );
+
+    final floating = html.DivElement()
+      ..style.width = '80px'
+      ..style.height = '40px';
+    originalParent.append(floating);
+    mounted.add(floating);
+
+    final flowRect = floating.getBoundingClientRect();
+
+    final overlay = PopperAnchoredOverlay.attach(
+      referenceElement: reference,
+      floatingElement: floating,
+      popperOptions: const PopperOptions(
+        placement: 'bottom-start',
+        strategy: PopperStrategy.fixed,
+      ),
+      portalOptions: const PopperPortalOptions(restoreOnDispose: true),
+    );
+
+    await overlay.update();
+
+    final anchoredRect = floating.getBoundingClientRect();
+    expect(anchoredRect.left.toDouble(), closeTo(400, 1.5));
+    expect(anchoredRect.left.toDouble(), isNot(closeTo(flowRect.left.toDouble(), 1.5)));
+
+    overlay.dispose();
+
+    final restoredRect = floating.getBoundingClientRect();
+    expect(restoredRect.left.toDouble(), closeTo(flowRect.left.toDouble(), 1.5));
+    expect(restoredRect.top.toDouble(), closeTo(flowRect.top.toDouble(), 1.5));
+  });
+
+  test('descartar preserva estilos e atributos definidos antes do attach',
+      () async {
+    final originalParent = mountBox(
+      left: 0,
+      top: 0,
+      width: 300,
+      height: 200,
+      position: 'absolute',
+    );
+    final reference = mountChild(
+      originalParent,
+      left: 30,
+      top: 20,
+      width: 60,
+      height: 20,
+    );
+
+    final floating = html.DivElement()
+      ..style.width = '80px'
+      ..style.height = '40px'
+      ..style.position = 'absolute'
+      ..style.left = '12px'
+      ..style.top = '18px'
+      ..style.zIndex = '5'
+      ..setAttribute('data-popper-placement', 'bottom-end');
+    originalParent.append(floating);
+    mounted.add(floating);
+
+    final overlay = PopperAnchoredOverlay.attach(
+      referenceElement: reference,
+      floatingElement: floating,
+      popperOptions: const PopperOptions(
+        placement: 'top-start',
+        strategy: PopperStrategy.fixed,
+      ),
+      portalOptions: const PopperPortalOptions(restoreOnDispose: true),
+    );
+
+    await overlay.update();
+    overlay.dispose();
+
+    expect(floating.style.position, 'absolute');
+    expect(floating.style.left, '12px');
+    expect(floating.style.top, '18px');
+    expect(floating.style.zIndex, '5');
+    expect(floating.style.width, '80px');
+    expect(floating.getAttribute('data-popper-placement'), 'bottom-end');
+  });
+
+  test('portal isolado devolve os estilos que aplicou ao descartar', () async {
+    final originalParent = mountBox(
+      left: 0,
+      top: 0,
+      width: 300,
+      height: 200,
+      position: 'absolute',
+    );
+
+    final floating = html.DivElement()..style.width = '80px';
+    originalParent.append(floating);
+    mounted.add(floating);
+
+    final portal = PopperPortal.attach(
+      floatingElement: floating,
+      options: const PopperPortalOptions(
+        floatingZIndex: '1056',
+        restoreOnDispose: true,
+      ),
+    );
+
+    expect(floating.style.position, 'fixed');
+    expect(floating.style.zIndex, '1056');
+    expect(floating.style.pointerEvents, 'auto');
+
+    portal.dispose();
+
+    expect(floating.parent, same(originalParent));
+    expect(floating.style.position, isEmpty);
+    expect(floating.style.zIndex, isEmpty);
+    expect(floating.style.pointerEvents, isEmpty);
+    expect(floating.style.width, '80px');
+  });
+
   test(
       'anchored overlay alinha bottom-start corretamente ao abrir elemento inicialmente oculto',
       () async {
