@@ -1,5 +1,6 @@
 # Popper
 
+[![pub package](https://img.shields.io/pub/v/popper.svg)](https://pub.dev/packages/popper)
 [![Dart CI](https://github.com/insinfo/popper_dart/actions/workflows/dart_ci.yml/badge.svg)](https://github.com/insinfo/popper_dart/actions/workflows/dart_ci.yml)
 
 A powerful and flexible positioning engine for Dart HTML, inspired by Popper.js and Floating UI.
@@ -16,7 +17,7 @@ dart pub add popper
 
 ```yaml
 dependencies:
-  popper: ^1.1.0
+  popper: ^1.2.0
 ```
 
 ## Features
