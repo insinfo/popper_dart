@@ -1106,6 +1106,95 @@ void main() {
     expect(floating.getAttribute('data-popper-placement'), 'bottom-end');
   });
 
+  test('descartar nao mexe no elemento quando ha layoutWriter customizado',
+      () async {
+    final originalParent = mountBox(
+      left: 0,
+      top: 0,
+      width: 300,
+      height: 200,
+      position: 'absolute',
+    );
+    final reference = mountChild(
+      originalParent,
+      left: 30,
+      top: 20,
+      width: 60,
+      height: 20,
+    );
+    final floating = mountChild(
+      originalParent,
+      left: 0,
+      top: 0,
+      width: 80,
+      height: 40,
+    );
+
+    // Com layoutWriter proprio o consumidor e quem escreve os estilos e o
+    // atributo de placement: o popper nunca tomou posse deles e nao pode
+    // devolve-los ao descartar.
+    final controller = PopperController(
+      referenceElement: reference,
+      floatingElement: floating,
+      options: PopperOptions(
+        placement: 'bottom-start',
+        strategy: PopperStrategy.fixed,
+        layoutWriter: (layout, element, arrow) {
+          element.style.position = 'fixed';
+          element.style.transform =
+              'translate(${layout.x.toStringAsFixed(2)}px, ${layout.y.toStringAsFixed(2)}px)';
+          element.setAttribute('data-popper-placement', layout.placement);
+        },
+      ),
+    );
+
+    await controller.update();
+
+    final writtenTransform = floating.style.transform;
+    expect(writtenTransform, isNotEmpty);
+    expect(floating.getAttribute('data-popper-placement'), 'bottom-start');
+
+    controller.dispose();
+
+    expect(floating.style.position, 'fixed');
+    expect(floating.style.transform, writtenTransform);
+    expect(floating.getAttribute('data-popper-placement'), 'bottom-start');
+  });
+
+  test('descartar sem nunca aplicar layout nao mexe no elemento', () async {
+    final originalParent = mountBox(
+      left: 0,
+      top: 0,
+      width: 300,
+      height: 200,
+      position: 'absolute',
+    );
+    final reference = mountChild(
+      originalParent,
+      left: 30,
+      top: 20,
+      width: 60,
+      height: 20,
+    );
+    final floating = mountChild(
+      originalParent,
+      left: 7,
+      top: 9,
+      width: 80,
+      height: 40,
+    );
+
+    final controller = PopperController(
+      referenceElement: reference,
+      floatingElement: floating,
+    );
+    controller.dispose();
+
+    expect(floating.style.position, 'absolute');
+    expect(floating.style.left, '7px');
+    expect(floating.style.top, '9px');
+  });
+
   test('portal isolado devolve os estilos que aplicou ao descartar', () async {
     final originalParent = mountBox(
       left: 0,

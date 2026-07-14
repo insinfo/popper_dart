@@ -1,6 +1,6 @@
 name: popper
 description: Floating UI and Popper-style positioning for Dart web apps, with middleware, auto update, portals, and anchored overlays.
-version: 1.2.0
+version: 1.2.1
 repository: https://github.com/insinfo/popper_dart.git
 issue_tracker: https://github.com/insinfo/popper_dart/issues
 topics:

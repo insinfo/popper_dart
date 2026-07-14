@@ -17,7 +17,7 @@ dart pub add popper
 
 ```yaml
 dependencies:
-  popper: ^1.2.0
+  popper: ^1.2.1
 ```
 
 ## Features

@@ -17,6 +17,11 @@ class PopperController {
   /// is written, so `dispose()` can hand it back in its pre-Popper state.
   late final _PopperOwnedState _floatingState;
 
+  /// Whether this controller ever wrote the layout onto the floating element.
+  /// A custom [PopperOptions.layoutWriter] leaves the element's styles to the
+  /// consumer, and `dispose()` must not hand back a state popper never took.
+  bool _appliedLayout = false;
+
   PopperController({
     required this.referenceElement,
     required this.floatingElement,
@@ -117,7 +122,9 @@ class PopperController {
     }
 
     stopAutoUpdate();
-    _floatingState.restore();
+    if (_appliedLayout) {
+      _floatingState.restore();
+    }
     _disposed = true;
   }
 
@@ -137,6 +144,7 @@ class PopperController {
   }
 
   void applyPopperLayout(PopperLayout layout) {
+    _appliedLayout = true;
     final style = floatingElement.style;
 
     style.position =
