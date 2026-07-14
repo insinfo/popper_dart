@@ -17,7 +17,7 @@ dart pub add popper
 
 ```yaml
 dependencies:
-  popper: ^1.2.1
+  popper: ^1.3.0
 ```
 
 ## Features
@@ -166,6 +166,8 @@ final controller = PopperController(
 - Call `startAutoUpdate()` when the floating element is visible and needs to react to scroll, resize, or DOM changes.
 - Call `stopAutoUpdate()` if the element stays mounted but no longer needs live positioning.
 - Call `dispose()` on `PopperController`, `PopperPortal`, or `PopperAnchoredOverlay` when they are no longer needed.
+- `dispose()` hands the floating element back in the state it was in before Popper wrote to it, clearing the inline styles and `data-popper-*` attributes it applied. This matters when the element outlives the controller — a menu returning to its inline parent, for example, would otherwise stay frozen at the last computed viewport coordinates, since inline styles outrank your CSS. Pass `dispose(restoreFloatingState: false)` to leave the last written layout in place.
+- Popper only undoes what Popper did: with a custom `layoutWriter` the floating element's styles are yours, so `dispose()` leaves them alone whatever `restoreFloatingState` says.
 
 ## Browser Support
 

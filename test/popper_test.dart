@@ -1161,6 +1161,54 @@ void main() {
     expect(floating.getAttribute('data-popper-placement'), 'bottom-start');
   });
 
+  test('restoreFloatingState false mantem o layout escrito pelo popper',
+      () async {
+    final originalParent = mountBox(
+      left: 0,
+      top: 0,
+      width: 300,
+      height: 200,
+      position: 'absolute',
+    );
+    final reference = mountChild(
+      originalParent,
+      left: 30,
+      top: 20,
+      width: 60,
+      height: 20,
+    );
+
+    final floating = html.DivElement()
+      ..style.width = '80px'
+      ..style.height = '40px';
+    originalParent.append(floating);
+    mounted.add(floating);
+
+    final overlay = PopperAnchoredOverlay.attach(
+      referenceElement: reference,
+      floatingElement: floating,
+      popperOptions: const PopperOptions(
+        placement: 'bottom-start',
+        strategy: PopperStrategy.fixed,
+      ),
+      portalOptions: const PopperPortalOptions(
+        floatingZIndex: '1056',
+        restoreOnDispose: true,
+      ),
+    );
+
+    await overlay.update();
+    final writtenTransform = floating.style.transform;
+
+    overlay.dispose(restoreFloatingState: false);
+
+    // O elemento volta ao pai original, mas congelado onde o popper o deixou.
+    expect(floating.parent, same(originalParent));
+    expect(floating.style.position, 'fixed');
+    expect(floating.style.transform, writtenTransform);
+    expect(floating.style.zIndex, '1056');
+  });
+
   test('descartar sem nunca aplicar layout nao mexe no elemento', () async {
     final originalParent = mountBox(
       left: 0,

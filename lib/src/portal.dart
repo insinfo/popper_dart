@@ -52,7 +52,13 @@ class PopperPortal {
     );
   }
 
-  void dispose() {
+  /// Tears the portal down, moving the floating element back to its original
+  /// parent when `restoreOnDispose` was set.
+  ///
+  /// By default the styles this portal applied to the floating element
+  /// (`position`, `pointer-events`, `z-index`) are handed back as they were.
+  /// Pass [restoreFloatingState] as `false` to leave them in place.
+  void dispose({bool restoreFloatingState = true}) {
     if (_disposed) {
       return;
     }
@@ -60,7 +66,9 @@ class PopperPortal {
     if (_restoreOnDispose && _originalParent != null) {
       _originalParent.append(floatingElement);
     }
-    _floatingState.restore();
+    if (restoreFloatingState) {
+      _floatingState.restore();
+    }
 
     hostElement.remove();
     _disposed = true;
@@ -105,8 +113,13 @@ class PopperAnchoredOverlay {
 
   void stopAutoUpdate() => controller.stopAutoUpdate();
 
-  void dispose() {
-    controller.dispose();
-    portal.dispose();
+  /// Disposes the controller and the portal.
+  ///
+  /// See [PopperController.dispose] and [PopperPortal.dispose] for what
+  /// [restoreFloatingState] controls. The controller is disposed first so the
+  /// portal's pre-attach snapshot of `position` is the one that lands.
+  void dispose({bool restoreFloatingState = true}) {
+    controller.dispose(restoreFloatingState: restoreFloatingState);
+    portal.dispose(restoreFloatingState: restoreFloatingState);
   }
 }

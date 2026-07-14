@@ -116,13 +116,24 @@ class PopperController {
     _updateQueued = false;
   }
 
-  void dispose() {
+  /// Disposes the controller and stops auto update.
+  ///
+  /// By default the floating element is handed back in the state it was in
+  /// before this controller wrote its first layout. Pass
+  /// [restoreFloatingState] as `false` to leave the last written layout on the
+  /// element — useful when it is about to be removed anyway, or when it should
+  /// stay frozen where popper put it.
+  ///
+  /// The element is never touched when this controller did not write the
+  /// layout itself (a custom [PopperOptions.layoutWriter] leaves those styles
+  /// to the consumer), regardless of [restoreFloatingState].
+  void dispose({bool restoreFloatingState = true}) {
     if (_disposed) {
       return;
     }
 
     stopAutoUpdate();
-    if (_appliedLayout) {
+    if (restoreFloatingState && _appliedLayout) {
       _floatingState.restore();
     }
     _disposed = true;
