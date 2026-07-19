@@ -923,11 +923,11 @@ void main() {
     );
 
     expect(portal.hostElement.classList.contains('test-portal-host'), isTrue);
-    expect(floating.parentElement, same(portal.hostElement));
+    expect(floating.parentElement == portal.hostElement, isTrue);
 
     portal.dispose();
 
-    expect(floating.parentElement, same(originalParent));
+    expect(floating.parentElement == originalParent, isTrue);
     expect(portal.hostElement.isConnected, isFalse);
 
     final overlay = PopperAnchoredOverlay.attach(
@@ -942,7 +942,7 @@ void main() {
       ),
     );
 
-    expect(floating.parentElement, same(overlay.portal.hostElement));
+    expect(floating.parentElement == overlay.portal.hostElement, isTrue);
 
     final layout = await overlay.update();
     expect(layout, isNotNull);
@@ -952,7 +952,7 @@ void main() {
     overlay.stopAutoUpdate();
     overlay.dispose();
 
-    expect(floating.parentElement, same(originalParent));
+    expect(floating.parentElement == originalParent, isTrue);
     expect(overlay.portal.hostElement.isConnected, isFalse);
   });
 
@@ -1006,7 +1006,7 @@ void main() {
     // O elemento volta para o pai original sem os estilos inline do popper.
     // Mante-los faz o elemento continuar renderizando nas ultimas coordenadas
     // de viewport calculadas, ignorando o proprio CSS.
-    expect(floating.parentElement, same(originalParent));
+    expect(floating.parentElement == originalParent, isTrue);
     expect(floating.style.position, isEmpty);
     expect(floating.style.transform, isEmpty);
     expect(floating.style.left, isEmpty);
@@ -1222,7 +1222,7 @@ void main() {
     overlay.dispose(restoreFloatingState: false);
 
     // O elemento volta ao pai original, mas congelado onde o popper o deixou.
-    expect(floating.parentElement, same(originalParent));
+    expect(floating.parentElement == originalParent, isTrue);
     expect(floating.style.position, 'fixed');
     expect(floating.style.transform, writtenTransform);
     expect(floating.style.zIndex, '1056');
@@ -1289,7 +1289,7 @@ void main() {
 
     portal.dispose();
 
-    expect(floating.parentElement, same(originalParent));
+    expect(floating.parentElement == originalParent, isTrue);
     expect(floating.style.position, isEmpty);
     expect(floating.style.zIndex, isEmpty);
     expect(floating.style.pointerEvents, isEmpty);
