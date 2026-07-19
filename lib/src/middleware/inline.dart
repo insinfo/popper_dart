@@ -14,7 +14,8 @@ PopperMiddleware inlineMiddleware() {
       var right = double.negativeInfinity;
       var bottom = double.negativeInfinity;
 
-      for (final rect in clientRects) {
+      for (var i = 0; i < clientRects.length; i++) {
+        final rect = clientRects.item(i)!;
         left = math.min(left, rect.left.toDouble());
         top = math.min(top, rect.top.toDouble());
         right = math.max(right, rect.right.toDouble());
@@ -22,7 +23,7 @@ PopperMiddleware inlineMiddleware() {
       }
 
       final nextRects = PopperRects(
-        reference: html.Rectangle<num>(left, top, right - left, bottom - top),
+        reference: math.Rectangle<num>(left, top, right - left, bottom - top),
         floating: _cloneRect(state.rects.floating),
       );
 

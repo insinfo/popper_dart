@@ -1,14 +1,14 @@
 part of '../popper.dart';
 
 class PopperController {
-  final html.Element referenceElement;
-  final html.Element floatingElement;
-  final List<StreamSubscription<html.Event>> _subscriptions =
-      <StreamSubscription<html.Event>>[];
+  final web.Element referenceElement;
+  final web.Element floatingElement;
+  final List<StreamSubscription<web.Event>> _subscriptions =
+      <StreamSubscription<web.Event>>[];
 
   PopperOptions options;
 
-  html.MutationObserver? _mutationObserver;
+  web.MutationObserver? _mutationObserver;
   bool _disposed = false;
   bool _autoUpdateEnabled = false;
   bool _updateQueued = false;
@@ -62,42 +62,45 @@ class PopperController {
 
     _autoUpdateEnabled = true;
 
-    final scrollParents = <html.Element>{};
+    final scrollParents = <web.Element>{};
     scrollParents.addAll(_collectScrollParents(referenceElement));
     scrollParents.addAll(_collectScrollParents(floatingElement));
 
     for (final parent in scrollParents) {
-      _subscriptions.add(parent.onScroll.listen((_) {
-        _queueUpdate();
-      }));
+      _subscriptions.add(
+        web.EventStreamProviders.scrollEvent.forTarget(parent).listen((_) {
+          _queueUpdate();
+        }),
+      );
     }
 
-    _subscriptions.add(html.window.onScroll.listen((_) {
-      _queueUpdate();
-    }));
+    _subscriptions.add(
+      web.EventStreamProviders.scrollEvent.forTarget(web.window).listen((_) {
+        _queueUpdate();
+      }),
+    );
 
-    _subscriptions.add(html.window.onResize.listen((_) {
-      _queueUpdate();
-    }));
+    _subscriptions.add(
+      web.EventStreamProviders.resizeEvent.forTarget(web.window).listen((_) {
+        _queueUpdate();
+      }),
+    );
 
     if (options.observeMutations) {
-      _mutationObserver = html.MutationObserver((_, __) {
-        _queueUpdate();
-      });
+      _mutationObserver = web.MutationObserver(
+        (JSArray<web.MutationRecord> mutations, web.MutationObserver observer) {
+          _queueUpdate();
+        }.toJS,
+      );
 
-      _mutationObserver!.observe(
-        referenceElement,
+      final observerInit = web.MutationObserverInit(
         childList: true,
         subtree: true,
         characterData: true,
       );
 
-      _mutationObserver!.observe(
-        floatingElement,
-        childList: true,
-        subtree: true,
-        characterData: true,
-      );
+      _mutationObserver!.observe(referenceElement, observerInit);
+      _mutationObserver!.observe(floatingElement, observerInit);
     }
 
     update();
@@ -145,13 +148,15 @@ class PopperController {
     }
 
     _updateQueued = true;
-    html.window.requestAnimationFrame((_) {
-      _updateQueued = false;
-      if (_disposed) {
-        return;
-      }
-      update();
-    });
+    web.window.requestAnimationFrame(
+      (double timestamp) {
+        _updateQueued = false;
+        if (_disposed) {
+          return;
+        }
+        update();
+      }.toJS,
+    );
   }
 
   void applyPopperLayout(PopperLayout layout) {
@@ -194,13 +199,13 @@ class PopperController {
     if (layout.referenceHidden) {
       floatingElement.setAttribute('data-popper-reference-hidden', 'true');
     } else {
-      floatingElement.attributes.remove('data-popper-reference-hidden');
+      floatingElement.removeAttribute('data-popper-reference-hidden');
     }
 
     if (layout.escaped) {
       floatingElement.setAttribute('data-popper-escaped', 'true');
     } else {
-      floatingElement.attributes.remove('data-popper-escaped');
+      floatingElement.removeAttribute('data-popper-escaped');
     }
 
     if (options.hideWhenDetached &&
@@ -219,7 +224,7 @@ class PopperController {
     }
   }
 
-  void _applyArrow(PopperLayout layout, html.Element arrowElement) {
+  void _applyArrow(PopperLayout layout, web.Element arrowElement) {
     final arrowLayoutWriter = options.arrowLayoutWriter;
     if (arrowLayoutWriter != null) {
       arrowLayoutWriter(layout, arrowElement);
@@ -278,7 +283,7 @@ class PopperController {
     }
   }
 
-  void _clearArrowStyles(html.CssStyleDeclaration style) {
+  void _clearArrowStyles(web.CSSStyleDeclaration style) {
     style.position = '';
     style.left = '';
     style.right = '';
@@ -286,11 +291,11 @@ class PopperController {
     style.bottom = '';
   }
 
-  Set<html.Element> _collectScrollParents(html.Element element) {
-    final result = <html.Element>{};
-    html.Element? current = element.parent;
+  Set<web.Element> _collectScrollParents(web.Element element) {
+    final result = <web.Element>{};
+    web.Element? current = element.parentElement;
 
-    while (current != null && current != html.document.body) {
+    while (current != null && current != web.document.body) {
       final computed = current.getComputedStyle();
       final overflow =
           '${computed.overflow}${computed.overflowX}${computed.overflowY}'
@@ -304,7 +309,7 @@ class PopperController {
         result.add(current);
       }
 
-      current = current.parent;
+      current = current.parentElement;
     }
 
     return result;

@@ -3,18 +3,41 @@ library;
 
 // para executar use dart test -p chrome test/popper_test.dart
 import 'dart:async';
-import 'dart:html' as html;
-import 'dart:js_util' as js_util;
+import 'dart:js_interop';
+import 'dart:js_interop_unsafe';
+import 'dart:math' as math;
 
 import 'package:popper/popper.dart';
 import 'package:test/test.dart';
+import 'package:web/web.dart' as web;
 
 void main() {
-  final mounted = <html.Element>[];
+  final mounted = <web.Element>[];
+
+  web.HTMLDivElement newDiv() =>
+      web.document.createElement('div') as web.HTMLDivElement;
+
+  web.HTMLSpanElement newSpan(String text) =>
+      (web.document.createElement('span') as web.HTMLSpanElement)
+        ..textContent = text;
+
+  void setTestVisualViewport({
+    required double width,
+    required double height,
+    required double offsetLeft,
+    required double offsetTop,
+  }) {
+    final viewport = JSObject();
+    viewport.setProperty('width'.toJS, width.toJS);
+    viewport.setProperty('height'.toJS, height.toJS);
+    viewport.setProperty('offsetLeft'.toJS, offsetLeft.toJS);
+    viewport.setProperty('offsetTop'.toJS, offsetTop.toJS);
+    web.window.setProperty('__popperTestVisualViewport'.toJS, viewport);
+  }
 
   setUp(() {
-    html.document.body!.style.margin = '0';
-    html.document.body!.style.padding = '0';
+    web.document.body!.style.margin = '0';
+    web.document.body!.style.padding = '0';
   });
 
   tearDown(() {
@@ -22,10 +45,10 @@ void main() {
       element.remove();
     }
     mounted.clear();
-    js_util.setProperty(html.window, '__popperTestVisualViewport', null);
+    web.window.setProperty('__popperTestVisualViewport'.toJS, null);
   });
 
-  html.DivElement mountBox({
+  web.HTMLDivElement mountBox({
     required double left,
     required double top,
     required double width,
@@ -33,7 +56,7 @@ void main() {
     String position = 'fixed',
     String? extraStyle,
   }) {
-    final element = html.DivElement()
+    final element = newDiv()
       ..style.position = position
       ..style.left = '${left}px'
       ..style.top = '${top}px'
@@ -45,13 +68,13 @@ void main() {
           'style', '${element.getAttribute('style')};$extraStyle');
     }
 
-    html.document.body!.append(element);
+    web.document.body!.appendChild(element);
     mounted.add(element);
     return element;
   }
 
-  html.DivElement mountChild(
-    html.Element parent, {
+  web.HTMLDivElement mountChild(
+    web.Element parent, {
     required double left,
     required double top,
     required double width,
@@ -59,7 +82,7 @@ void main() {
     String position = 'absolute',
     String? extraStyle,
   }) {
-    final element = html.DivElement()
+    final element = newDiv()
       ..style.position = position
       ..style.left = '${left}px'
       ..style.top = '${top}px'
@@ -71,14 +94,16 @@ void main() {
           'style', '${element.getAttribute('style')};$extraStyle');
     }
 
-    parent.append(element);
+    parent.appendChild(element);
     mounted.add(element);
     return element;
   }
 
   Future<void> nextFrame() async {
     final completer = Completer<void>();
-    html.window.requestAnimationFrame((_) => completer.complete());
+    web.window.requestAnimationFrame(
+      ((double timestamp) => completer.complete()).toJS,
+    );
     await completer.future;
   }
 
@@ -342,17 +367,17 @@ void main() {
       extraStyle: 'font-size: 16px; line-height: 16px;',
     );
 
-    final paragraph = html.DivElement()
+    final paragraph = newDiv()
       ..style.width = '120px'
       ..style.whiteSpace = 'normal'
-      ..text = 'texto longo para quebrar em mais de uma linha no inline';
-    container.append(paragraph);
+      ..textContent = 'texto longo para quebrar em mais de uma linha no inline';
+    container.appendChild(paragraph);
     mounted.add(paragraph);
 
-    final reference = html.SpanElement()
-      ..text = 'referencia inline muito longa para quebrar linha'
-      ..style.backgroundColor = 'rgb(255, 255, 0)';
-    paragraph.append(reference);
+    final reference =
+        newSpan('referencia inline muito longa para quebrar linha')
+          ..style.backgroundColor = 'rgb(255, 255, 0)';
+    paragraph.appendChild(reference);
     mounted.add(reference);
 
     final floating = mountBox(
@@ -375,21 +400,17 @@ void main() {
       ),
     );
 
-    final firstRect = reference.getClientRects().first;
+    final firstRect = reference.getClientRects().item(0)!;
     expect(layout.referenceRect.height, greaterThan(firstRect.height));
   });
 
   test('respeita visual viewport override ao calcular clipping e shift',
       () async {
-    js_util.setProperty(
-      html.window,
-      '__popperTestVisualViewport',
-      js_util.jsify(<String, double>{
-        'width': 200,
-        'height': 150,
-        'offsetLeft': 10,
-        'offsetTop': 20,
-      }),
+    setTestVisualViewport(
+      width: 200,
+      height: 150,
+      offsetLeft: 10,
+      offsetTop: 20,
     );
 
     final reference = mountBox(
@@ -445,15 +466,11 @@ void main() {
       height: 50,
     );
 
-    js_util.setProperty(
-      html.window,
-      '__popperTestVisualViewport',
-      js_util.jsify(<String, double>{
-        'width': 220,
-        'height': 180,
-        'offsetLeft': 0,
-        'offsetTop': 0,
-      }),
+    setTestVisualViewport(
+      width: 220,
+      height: 180,
+      offsetLeft: 0,
+      offsetTop: 0,
     );
 
     final layout = await computePopperLayout(
@@ -656,7 +673,7 @@ void main() {
       options: PopperOptions(
         placement: 'bottom',
         strategy: PopperStrategy.fixed,
-        anchorRectBuilder: (_, __) => html.Rectangle<num>(20, 30, 100, 10),
+        anchorRectBuilder: (_, __) => math.Rectangle<num>(20, 30, 100, 10),
       ),
     );
 
@@ -699,7 +716,7 @@ void main() {
         arrowElement: arrow,
         layoutWriter: (layout, floatingElement, arrowElement) {
           writerCalled = true;
-          floatingElement.style.transform =
+          (floatingElement as web.HTMLElement).style.transform =
               'translateX(${layout.x.toStringAsFixed(0)}px)';
           arrowElement?.setAttribute('data-writer', layout.placement);
         },
@@ -745,7 +762,7 @@ void main() {
         arrowElement: arrow,
         arrowLayoutWriter: (layout, arrowElement) {
           writerCalled = true;
-          arrowElement.style
+          (arrowElement as web.HTMLElement).style
             ..position = 'absolute'
             ..left = '7px'
             ..top = ''
@@ -821,7 +838,7 @@ void main() {
     expect(floating.style.minWidth, '90px');
     expect(floating.style.visibility, 'hidden');
     expect(floating.style.pointerEvents, 'none');
-    expect(floating.attributes, contains('data-popper-reference-hidden'));
+    expect(floating.hasAttribute('data-popper-reference-hidden'), isTrue);
   });
 
   test('controller inicia auto update, observa mutacoes e para corretamente',
@@ -857,14 +874,14 @@ void main() {
     expect(layoutCalls, greaterThan(0));
 
     final callsAfterStart = layoutCalls;
-    reference.append(html.SpanElement()..text = 'mutation');
+    reference.appendChild(newSpan('mutation'));
     await nextFrame();
     await nextFrame();
     expect(layoutCalls, greaterThan(callsAfterStart));
 
     controller.stopAutoUpdate();
     final callsAfterStop = layoutCalls;
-    reference.append(html.SpanElement()..text = 'ignored');
+    reference.appendChild(newSpan('ignored'));
     await nextFrame();
     await nextFrame();
     expect(layoutCalls, equals(callsAfterStop));
@@ -905,12 +922,12 @@ void main() {
       ),
     );
 
-    expect(portal.hostElement.classes.contains('test-portal-host'), isTrue);
-    expect(floating.parent, same(portal.hostElement));
+    expect(portal.hostElement.classList.contains('test-portal-host'), isTrue);
+    expect(floating.parentElement, same(portal.hostElement));
 
     portal.dispose();
 
-    expect(floating.parent, same(originalParent));
+    expect(floating.parentElement, same(originalParent));
     expect(portal.hostElement.isConnected, isFalse);
 
     final overlay = PopperAnchoredOverlay.attach(
@@ -925,7 +942,7 @@ void main() {
       ),
     );
 
-    expect(floating.parent, same(overlay.portal.hostElement));
+    expect(floating.parentElement, same(overlay.portal.hostElement));
 
     final layout = await overlay.update();
     expect(layout, isNotNull);
@@ -935,7 +952,7 @@ void main() {
     overlay.stopAutoUpdate();
     overlay.dispose();
 
-    expect(floating.parent, same(originalParent));
+    expect(floating.parentElement, same(originalParent));
     expect(overlay.portal.hostElement.isConnected, isFalse);
   });
 
@@ -958,10 +975,10 @@ void main() {
 
     // Sem estilos de posicionamento proprios: o elemento depende do CSS/fluxo
     // normal quando o popper nao esta ancorando.
-    final floating = html.DivElement()
+    final floating = newDiv()
       ..style.width = '80px'
       ..style.height = '40px';
-    originalParent.append(floating);
+    originalParent.appendChild(floating);
     mounted.add(floating);
 
     final overlay = PopperAnchoredOverlay.attach(
@@ -989,7 +1006,7 @@ void main() {
     // O elemento volta para o pai original sem os estilos inline do popper.
     // Mante-los faz o elemento continuar renderizando nas ultimas coordenadas
     // de viewport calculadas, ignorando o proprio CSS.
-    expect(floating.parent, same(originalParent));
+    expect(floating.parentElement, same(originalParent));
     expect(floating.style.position, isEmpty);
     expect(floating.style.transform, isEmpty);
     expect(floating.style.left, isEmpty);
@@ -1026,10 +1043,10 @@ void main() {
       height: 20,
     );
 
-    final floating = html.DivElement()
+    final floating = newDiv()
       ..style.width = '80px'
       ..style.height = '40px';
-    originalParent.append(floating);
+    originalParent.appendChild(floating);
     mounted.add(floating);
 
     final flowRect = floating.getBoundingClientRect();
@@ -1048,7 +1065,8 @@ void main() {
 
     final anchoredRect = floating.getBoundingClientRect();
     expect(anchoredRect.left.toDouble(), closeTo(400, 1.5));
-    expect(anchoredRect.left.toDouble(), isNot(closeTo(flowRect.left.toDouble(), 1.5)));
+    expect(anchoredRect.left.toDouble(),
+        isNot(closeTo(flowRect.left.toDouble(), 1.5)));
 
     overlay.dispose();
 
@@ -1074,7 +1092,7 @@ void main() {
       height: 20,
     );
 
-    final floating = html.DivElement()
+    final floating = newDiv()
       ..style.width = '80px'
       ..style.height = '40px'
       ..style.position = 'absolute'
@@ -1082,7 +1100,7 @@ void main() {
       ..style.top = '18px'
       ..style.zIndex = '5'
       ..setAttribute('data-popper-placement', 'bottom-end');
-    originalParent.append(floating);
+    originalParent.appendChild(floating);
     mounted.add(floating);
 
     final overlay = PopperAnchoredOverlay.attach(
@@ -1140,8 +1158,9 @@ void main() {
         placement: 'bottom-start',
         strategy: PopperStrategy.fixed,
         layoutWriter: (layout, element, arrow) {
-          element.style.position = 'fixed';
-          element.style.transform =
+          final style = (element as web.HTMLElement).style;
+          style.position = 'fixed';
+          style.transform =
               'translate(${layout.x.toStringAsFixed(2)}px, ${layout.y.toStringAsFixed(2)}px)';
           element.setAttribute('data-popper-placement', layout.placement);
         },
@@ -1178,10 +1197,10 @@ void main() {
       height: 20,
     );
 
-    final floating = html.DivElement()
+    final floating = newDiv()
       ..style.width = '80px'
       ..style.height = '40px';
-    originalParent.append(floating);
+    originalParent.appendChild(floating);
     mounted.add(floating);
 
     final overlay = PopperAnchoredOverlay.attach(
@@ -1203,7 +1222,7 @@ void main() {
     overlay.dispose(restoreFloatingState: false);
 
     // O elemento volta ao pai original, mas congelado onde o popper o deixou.
-    expect(floating.parent, same(originalParent));
+    expect(floating.parentElement, same(originalParent));
     expect(floating.style.position, 'fixed');
     expect(floating.style.transform, writtenTransform);
     expect(floating.style.zIndex, '1056');
@@ -1252,8 +1271,8 @@ void main() {
       position: 'absolute',
     );
 
-    final floating = html.DivElement()..style.width = '80px';
-    originalParent.append(floating);
+    final floating = newDiv()..style.width = '80px';
+    originalParent.appendChild(floating);
     mounted.add(floating);
 
     final portal = PopperPortal.attach(
@@ -1270,7 +1289,7 @@ void main() {
 
     portal.dispose();
 
-    expect(floating.parent, same(originalParent));
+    expect(floating.parentElement, same(originalParent));
     expect(floating.style.position, isEmpty);
     expect(floating.style.zIndex, isEmpty);
     expect(floating.style.pointerEvents, isEmpty);
@@ -1305,10 +1324,10 @@ void main() {
           'background: white; box-sizing: border-box;',
     );
 
-    final search = html.DivElement()
+    final search = newDiv()
       ..style.margin = '8px'
       ..style.height = '40px';
-    floating.append(search);
+    floating.appendChild(search);
     mounted.add(search);
 
     final overlay = PopperAnchoredOverlay.attach(

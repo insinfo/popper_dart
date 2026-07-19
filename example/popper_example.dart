@@ -1,9 +1,9 @@
-import 'dart:html' as html;
 import 'package:popper/popper.dart';
+import 'package:web/web.dart' as web;
 
 void main() {
   // Styles for the example viewport
-  html.document.body!.style
+  web.document.body!.style
     ..margin = '0'
     ..fontFamily = 'sans-serif'
     ..height = '200vh' // Force scrolling to demonstrate auto update behavior
@@ -12,8 +12,10 @@ void main() {
     ..alignItems = 'center';
 
   // Create Reference Element (Button)
-  final button = html.ButtonElement()
-    ..text = 'Click or Hover Me'
+  final button =
+      web.document.createElement('button') as web.HTMLButtonElement;
+  button
+    ..textContent = 'Click or Hover Me'
     ..style.padding = '16px 24px'
     ..style.fontSize = '16px'
     ..style.cursor = 'pointer'
@@ -23,11 +25,12 @@ void main() {
     ..style.borderRadius = '8px'
     ..style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
 
-  html.document.body!.append(button);
+  web.document.body!.appendChild(button);
 
   // Create Floating Element (Tooltip)
-  final tooltip = html.DivElement()
-    ..text = 'I am a Popper tooltip!'
+  final tooltip = web.document.createElement('div') as web.HTMLDivElement;
+  tooltip
+    ..textContent = 'I am a Popper tooltip!'
     ..style.backgroundColor = '#222'
     ..style.color = '#fff'
     ..style.padding = '8px 12px'
@@ -37,7 +40,7 @@ void main() {
     ..style.boxShadow = '0 4px 10px rgba(0,0,0,0.15)'
     ..style.zIndex = '9999';
 
-  html.document.body!.append(tooltip);
+  web.document.body!.appendChild(tooltip);
 
   // Initialize Popper controller
   final popper = PopperController(
@@ -54,9 +57,9 @@ void main() {
 
   // Bind the controller to continuously auto update on scroll & resize
   popper.startAutoUpdate();
-  
+
   // Example interaction: Swap base placement on click
-  button.onClick.listen((_) {
+  web.EventStreamProviders.clickEvent.forTarget(button).listen((_) {
     final currentOpts = popper.options;
     popper.options = PopperOptions(
       placement: currentOpts.placement.startsWith('top') ? 'bottom' : 'top',
@@ -65,7 +68,7 @@ void main() {
       flip: currentOpts.flip,
       shift: currentOpts.shift,
     );
-    
+
     // Instantly update the layout frame based on the new options
     popper.update();
   });

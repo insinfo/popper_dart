@@ -7,7 +7,7 @@ A powerful and flexible positioning engine for Dart HTML, inspired by Popper.js 
 
 It calculates the absolute or fixed X and Y coordinates needed to position a "floating" element (like a tooltip, popover, or dropdown) next to a "reference" element, while intelligently keeping it in view.
 
-This package targets Dart web applications and uses `dart:html`, so it is intended for browser environments.
+This package targets Dart web applications and uses `package:web` (the modern replacement for `dart:html`), so it is intended for browser environments.
 
 ## Installation
 
@@ -17,7 +17,7 @@ dart pub add popper
 
 ```yaml
 dependencies:
-  popper: ^1.3.0
+  popper: ^2.0.0
 ```
 
 ## Features
@@ -35,12 +35,12 @@ Use `computePosition` when you only need coordinates and middleware data. Use `c
 ## Basic Usage
 
 ```dart
-import 'dart:html';
 import 'package:popper/popper.dart';
+import 'package:web/web.dart';
 
 void main() async {
   final reference = document.querySelector('#button')!;
-  final floating = document.querySelector('#tooltip')!;
+  final floating = document.querySelector('#tooltip') as HTMLElement;
 
   // Low-level computation
   final result = await computePosition(
@@ -82,8 +82,8 @@ void main() async {
 If your floating element should be rendered in a portal attached to `document.body`, use `PopperAnchoredOverlay`.
 
 ```dart
-import 'dart:html';
 import 'package:popper/popper.dart';
+import 'package:web/web.dart';
 
 void main() {
   final button = document.querySelector('#button')!;
@@ -106,7 +106,7 @@ void main() {
 
   overlay.startAutoUpdate();
 
-  window.onUnload.listen((_) {
+  EventStreamProviders.unloadEvent.forTarget(window).listen((_) {
     overlay.dispose();
   });
 }
@@ -171,7 +171,7 @@ final controller = PopperController(
 
 ## Browser Support
 
-This package depends on `dart:html` and is meant for browser tests and browser builds. Run the test suite on a browser platform, for example:
+This package depends on `package:web` and is meant for browser tests and browser builds. Run the test suite on a browser platform, for example:
 
 ```sh
 dart test -p chrome

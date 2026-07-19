@@ -1,5 +1,16 @@
 part of '../../popper.dart';
 
+/// `dart:html` exposed `style` and `getComputedStyle()` on every element;
+/// `package:web` only declares them on `HTMLElement`/`SVGElement` and on
+/// `window`. The casts are safe on the JS backends: every element shares the
+/// same underlying JS object, which always carries an inline `style`.
+extension _PopperElementHelpers on web.Element {
+  web.CSSStyleDeclaration get style => (this as web.HTMLElement).style;
+
+  web.CSSStyleDeclaration getComputedStyle() =>
+      web.window.getComputedStyle(this);
+}
+
 /// Inline styles `PopperPortal.attach` takes over on the floating element.
 const List<String> _popperPortalOwnedStyles = <String>[
   'position',
@@ -46,12 +57,12 @@ const List<String> _popperLayoutOwnedAttributes = <String>[
 class _PopperOwnedState {
   _PopperOwnedState._(this._element, this._styles, this._attributes);
 
-  final html.Element _element;
+  final web.Element _element;
   final Map<String, String> _styles;
   final Map<String, String?> _attributes;
 
   factory _PopperOwnedState.capture(
-    html.Element element, {
+    web.Element element, {
     List<String> styleProperties = const <String>[],
     List<String> attributes = const <String>[],
   }) {
@@ -80,7 +91,7 @@ class _PopperOwnedState {
     for (final entry in _attributes.entries) {
       final value = entry.value;
       if (value == null) {
-        _element.attributes.remove(entry.key);
+        _element.removeAttribute(entry.key);
       } else {
         _element.setAttribute(entry.key, value);
       }
@@ -88,13 +99,22 @@ class _PopperOwnedState {
   }
 }
 
-html.Rectangle<num> _measureRect(html.Element element) {
-  final rect = element.getBoundingClientRect();
+math.Rectangle<num> _rectFromDomRect(web.DOMRect rect) {
+  return math.Rectangle<num>(
+    rect.left,
+    rect.top,
+    rect.width,
+    rect.height,
+  );
+}
+
+math.Rectangle<num> _measureRect(web.Element element) {
+  final rect = _rectFromDomRect(element.getBoundingClientRect());
   if (rect.width.toDouble() > 0 || rect.height.toDouble() > 0) {
     return rect;
   }
 
-  if (element is! html.HtmlElement) {
+  if (!element.isA<web.HTMLElement>()) {
     return rect;
   }
 
@@ -111,7 +131,7 @@ html.Rectangle<num> _measureRect(html.Element element) {
     element.style.position = 'absolute';
   }
 
-  final measured = element.getBoundingClientRect();
+  final measured = _rectFromDomRect(element.getBoundingClientRect());
 
   element.style.display = previousDisplay;
   element.style.visibility = previousVisibility;
@@ -120,8 +140,8 @@ html.Rectangle<num> _measureRect(html.Element element) {
   return measured;
 }
 
-html.Rectangle<num> _cloneRect(html.Rectangle<num> rect) {
-  return html.Rectangle<num>(
+math.Rectangle<num> _cloneRect(math.Rectangle<num> rect) {
+  return math.Rectangle<num>(
     rect.left,
     rect.top,
     rect.width,
@@ -133,39 +153,47 @@ double _asDouble(num? value) {
   return value?.toDouble() ?? 0.0;
 }
 
-bool _isRTL(html.Element element) {
+bool _isRTL(web.Element element) {
   return element.getComputedStyle().direction.toLowerCase() == 'rtl';
 }
 
-double _scaleX(html.Element element) {
-  if (element is! html.HtmlElement || element.offsetWidth == 0) {
+double _scaleX(web.Element element) {
+  if (!element.isA<web.HTMLElement>()) {
+    return 1.0;
+  }
+  final offsetWidth = (element as web.HTMLElement).offsetWidth;
+  if (offsetWidth == 0) {
     return 1.0;
   }
 
   final rect = element.getBoundingClientRect();
   final width = rect.width.toDouble();
-  return width == 0 ? 1.0 : width / element.offsetWidth.toDouble();
+  return width == 0 ? 1.0 : width / offsetWidth.toDouble();
 }
 
-double _scaleY(html.Element element) {
-  if (element is! html.HtmlElement || element.offsetHeight == 0) {
+double _scaleY(web.Element element) {
+  if (!element.isA<web.HTMLElement>()) {
+    return 1.0;
+  }
+  final offsetHeight = (element as web.HTMLElement).offsetHeight;
+  if (offsetHeight == 0) {
     return 1.0;
   }
 
   final rect = element.getBoundingClientRect();
   final height = rect.height.toDouble();
-  return height == 0 ? 1.0 : height / element.offsetHeight.toDouble();
+  return height == 0 ? 1.0 : height / offsetHeight.toDouble();
 }
 
-html.Rectangle<num> _getViewportRect() {
+math.Rectangle<num> _getViewportRect() {
   final visualViewport = _getVisualViewport();
   final viewportWidth =
-      visualViewport?['width'] ?? _asDouble(html.window.innerWidth);
+      visualViewport?['width'] ?? _asDouble(web.window.innerWidth);
   final viewportHeight =
-      visualViewport?['height'] ?? _asDouble(html.window.innerHeight);
+      visualViewport?['height'] ?? _asDouble(web.window.innerHeight);
   final offsetLeft = visualViewport?['offsetLeft'] ?? 0.0;
   final offsetTop = visualViewport?['offsetTop'] ?? 0.0;
-  return html.Rectangle<num>(
+  return math.Rectangle<num>(
     offsetLeft,
     offsetTop,
     viewportWidth,
@@ -173,9 +201,9 @@ html.Rectangle<num> _getViewportRect() {
   );
 }
 
-html.Rectangle<num> _getDocumentRectInViewportCoords() {
-  final documentElement = html.document.documentElement;
-  final body = html.document.body;
+math.Rectangle<num> _getDocumentRectInViewportCoords() {
+  final documentElement = web.document.documentElement;
+  final body = web.document.body;
 
   final documentWidth = math.max(
     _asDouble(documentElement?.scrollWidth),
@@ -186,17 +214,17 @@ html.Rectangle<num> _getDocumentRectInViewportCoords() {
     _asDouble(body?.scrollHeight),
   );
 
-  return html.Rectangle<num>(
-    -_asDouble(html.window.pageXOffset),
-    -_asDouble(html.window.pageYOffset),
+  return math.Rectangle<num>(
+    -_asDouble(web.window.scrollX),
+    -_asDouble(web.window.scrollY),
     documentWidth,
     documentHeight,
   );
 }
 
-html.Rectangle<num> _getClippingRect({
-  required html.Element referenceElement,
-  required html.Element floatingElement,
+math.Rectangle<num> _getClippingRect({
+  required web.Element referenceElement,
+  required web.Element floatingElement,
   required PopperBoundary boundary,
 }) {
   switch (boundary) {
@@ -206,7 +234,7 @@ html.Rectangle<num> _getClippingRect({
       return _getDocumentRectInViewportCoords();
     case PopperBoundary.clippingAncestors:
       var rect = _getViewportRect();
-      final ancestors = <html.Element>{}
+      final ancestors = <web.Element>{}
         ..addAll(_collectClippingAncestors(referenceElement))
         ..addAll(_collectClippingAncestors(floatingElement));
 
@@ -217,21 +245,21 @@ html.Rectangle<num> _getClippingRect({
   }
 }
 
-Set<html.Element> _collectClippingAncestors(html.Element element) {
-  final result = <html.Element>{};
-  html.Element? current = element.parent;
+Set<web.Element> _collectClippingAncestors(web.Element element) {
+  final result = <web.Element>{};
+  web.Element? current = element.parentElement;
 
-  while (current != null && current != html.document.body) {
+  while (current != null && current != web.document.body) {
     if (_isClippingElement(current)) {
       result.add(current);
     }
-    current = current.parent;
+    current = current.parentElement;
   }
 
   return result;
 }
 
-bool _isClippingElement(html.Element element) {
+bool _isClippingElement(web.Element element) {
   final computedStyle = element.getComputedStyle();
   final overflow =
       '${computedStyle.overflow}${computedStyle.overflowX}${computedStyle.overflowY}'
@@ -244,10 +272,10 @@ bool _isClippingElement(html.Element element) {
       overflow.contains('overlay');
 }
 
-html.Rectangle<num> _getInnerClientRect(html.Element element) {
-  final rect = element.getBoundingClientRect();
+math.Rectangle<num> _getInnerClientRect(web.Element element) {
+  final rect = _rectFromDomRect(element.getBoundingClientRect());
 
-  if (element is! html.HtmlElement) {
+  if (!element.isA<web.HTMLElement>()) {
     return rect;
   }
 
@@ -256,12 +284,12 @@ html.Rectangle<num> _getInnerClientRect(html.Element element) {
   final width = _asDouble(element.clientWidth);
   final height = _asDouble(element.clientHeight);
 
-  return html.Rectangle<num>(left, top, width, height);
+  return math.Rectangle<num>(left, top, width, height);
 }
 
-html.Rectangle<num> _intersectRects(
-  html.Rectangle<num> first,
-  html.Rectangle<num> second,
+math.Rectangle<num> _intersectRects(
+  math.Rectangle<num> first,
+  math.Rectangle<num> second,
 ) {
   final left = math.max(first.left.toDouble(), second.left.toDouble());
   final top = math.max(first.top.toDouble(), second.top.toDouble());
@@ -274,7 +302,7 @@ html.Rectangle<num> _intersectRects(
     second.top.toDouble() + second.height.toDouble(),
   );
 
-  return html.Rectangle<num>(
+  return math.Rectangle<num>(
     left,
     top,
     math.max(0.0, right - left),
@@ -282,37 +310,37 @@ html.Rectangle<num> _intersectRects(
   );
 }
 
-html.Element? _getOffsetParent(html.Element element) {
+web.Element? _getOffsetParent(web.Element element) {
   final computedStyle = element.getComputedStyle();
 
   if (computedStyle.position == 'fixed') {
     return null;
   }
 
-  if (element is html.HtmlElement && element.offsetParent != null) {
-    final offsetParent = element.offsetParent;
+  if (element.isA<web.HTMLElement>()) {
+    final offsetParent = (element as web.HTMLElement).offsetParent;
     if (offsetParent != null &&
-        offsetParent != html.document.documentElement &&
-        offsetParent != html.document.body) {
+        offsetParent != web.document.documentElement &&
+        offsetParent != web.document.body) {
       return offsetParent;
     }
   }
 
-  html.Element? current = element.parent;
+  web.Element? current = element.parentElement;
   while (current != null &&
-      current != html.document.body &&
-      current != html.document.documentElement) {
+      current != web.document.body &&
+      current != web.document.documentElement) {
     final currentStyle = current.getComputedStyle();
     if (currentStyle.position != 'static' || _createsContainingBlock(current)) {
       return current;
     }
-    current = current.parent;
+    current = current.parentElement;
   }
 
-  return html.document.body;
+  return web.document.body;
 }
 
-bool _createsContainingBlock(html.Element element) {
+bool _createsContainingBlock(web.Element element) {
   final style = element.getComputedStyle();
   final transform = style.getPropertyValue('transform');
   final perspective = style.getPropertyValue('perspective');
@@ -332,7 +360,7 @@ bool _createsContainingBlock(html.Element element) {
 math.Point<double> _convertViewportCoordsToCssCoords({
   required double viewportX,
   required double viewportY,
-  required html.Element floatingElement,
+  required web.Element floatingElement,
   required PopperStrategy strategy,
 }) {
   if (strategy == PopperStrategy.fixed) {
@@ -340,26 +368,26 @@ math.Point<double> _convertViewportCoordsToCssCoords({
   }
 
   final offsetParent = _getOffsetParent(floatingElement);
-  if (offsetParent == null || offsetParent == html.document.body) {
+  if (offsetParent == null || offsetParent == web.document.body) {
     return math.Point<double>(
-      viewportX + _asDouble(html.window.pageXOffset),
-      viewportY + _asDouble(html.window.pageYOffset),
+      viewportX + _asDouble(web.window.scrollX),
+      viewportY + _asDouble(web.window.scrollY),
     );
   }
 
   final offsetParentRect = offsetParent.getBoundingClientRect();
   final scaleX = _scaleX(offsetParent);
   final scaleY = _scaleY(offsetParent);
-  final scrollLeft = offsetParent == html.document.body
-      ? _asDouble(html.window.pageXOffset)
+  final scrollLeft = offsetParent == web.document.body
+      ? _asDouble(web.window.scrollX)
       : _asDouble(offsetParent.scrollLeft);
-  final scrollTop = offsetParent == html.document.body
-      ? _asDouble(html.window.pageYOffset)
+  final scrollTop = offsetParent == web.document.body
+      ? _asDouble(web.window.scrollY)
       : _asDouble(offsetParent.scrollTop);
-  final clientLeft = offsetParent is html.HtmlElement
+  final clientLeft = offsetParent.isA<web.HTMLElement>()
       ? _asDouble(offsetParent.clientLeft)
       : 0.0;
-  final clientTop = offsetParent is html.HtmlElement
+  final clientTop = offsetParent.isA<web.HTMLElement>()
       ? _asDouble(offsetParent.clientTop)
       : 0.0;
 
@@ -371,46 +399,34 @@ math.Point<double> _convertViewportCoordsToCssCoords({
   );
 }
 
-Map<String, double>? _getVisualViewport() {
-  if (js_util.hasProperty(html.window, '__popperTestVisualViewport')) {
-    final testViewport =
-        js_util.getProperty<Object?>(html.window, '__popperTestVisualViewport');
-    if (testViewport != null) {
-      return <String, double>{
-        'width': _asDouble(
-          js_util.getProperty<Object?>(testViewport, 'width') as num?,
-        ),
-        'height': _asDouble(
-          js_util.getProperty<Object?>(testViewport, 'height') as num?,
-        ),
-        'offsetLeft': _asDouble(
-          js_util.getProperty<Object?>(testViewport, 'offsetLeft') as num?,
-        ),
-        'offsetTop': _asDouble(
-          js_util.getProperty<Object?>(testViewport, 'offsetTop') as num?,
-        ),
-      };
-    }
-  }
-
-  if (!js_util.hasProperty(html.window, 'visualViewport')) {
+double? _numPropertyOf(JSObject target, String name) {
+  if (!target.hasProperty(name.toJS).toDart) {
     return null;
   }
+  final value = target.getProperty(name.toJS);
+  return value.isA<JSNumber>() ? (value as JSNumber).toDartDouble : null;
+}
 
-  final viewport = js_util.getProperty<Object?>(html.window, 'visualViewport');
+Map<String, double>? _getVisualViewport() {
+  final testViewport =
+      web.window.getProperty('__popperTestVisualViewport'.toJS);
+  if (testViewport.isA<JSObject>()) {
+    final target = testViewport as JSObject;
+    return <String, double>{
+      'width': _numPropertyOf(target, 'width') ?? 0.0,
+      'height': _numPropertyOf(target, 'height') ?? 0.0,
+      'offsetLeft': _numPropertyOf(target, 'offsetLeft') ?? 0.0,
+      'offsetTop': _numPropertyOf(target, 'offsetTop') ?? 0.0,
+    };
+  }
+
+  final viewport = web.window.visualViewport;
   if (viewport == null) {
     return null;
   }
 
-  double getNumber(String name) {
-    if (!js_util.hasProperty(viewport, name)) {
-      return 0.0;
-    }
-    return _asDouble(js_util.getProperty<Object?>(viewport, name) as num?);
-  }
-
-  final width = getNumber('width');
-  final height = getNumber('height');
+  final width = viewport.width;
+  final height = viewport.height;
   if (width <= 0 || height <= 0) {
     return null;
   }
@@ -418,13 +434,13 @@ Map<String, double>? _getVisualViewport() {
   return <String, double>{
     'width': width,
     'height': height,
-    'offsetLeft': getNumber('offsetLeft'),
-    'offsetTop': getNumber('offsetTop'),
+    'offsetLeft': viewport.offsetLeft,
+    'offsetTop': viewport.offsetTop,
   };
 }
 
 double _roundByDevicePixelRatio(double value) {
-  final devicePixelRatio = _asDouble(html.window.devicePixelRatio);
+  final devicePixelRatio = _asDouble(web.window.devicePixelRatio);
   if (devicePixelRatio <= 0) {
     return value;
   }

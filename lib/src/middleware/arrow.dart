@@ -1,7 +1,7 @@
 part of '../../popper.dart';
 
 PopperMiddleware arrowMiddleware({
-  required html.Element element,
+  required web.Element element,
   PopperInsets padding = const PopperInsets.all(8),
 }) {
   return PopperMiddleware(

@@ -42,8 +42,8 @@ String _composePlacement(String basePlacement, String? alignment) {
 }
 
 math.Point<double> _computeCoordsFromPlacement({
-  required html.Rectangle<num> referenceRect,
-  required html.Rectangle<num> floatingRect,
+  required math.Rectangle<num> referenceRect,
+  required math.Rectangle<num> floatingRect,
   required String placement,
   bool rtl = false,
 }) {
@@ -99,8 +99,8 @@ math.Point<double> _computeCoordsFromPlacement({
 }
 
 math.Point<double> _computeViewportCoordsForPlacement({
-  required html.Rectangle<num> referenceRect,
-  required html.Rectangle<num> floatingRect,
+  required math.Rectangle<num> referenceRect,
+  required math.Rectangle<num> floatingRect,
   required String placement,
   required PopperOffset offset,
   bool rtl = false,

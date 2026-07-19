@@ -3,11 +3,11 @@ part of '../../popper.dart';
 typedef PopperDebugCleanup = void Function();
 
 PopperDebugCleanup paintPopperDebugRects({
-  required html.Rectangle<num> referenceRect,
-  required html.Rectangle<num> floatingRect,
-  required html.Rectangle<num> clippingRect,
+  required math.Rectangle<num> referenceRect,
+  required math.Rectangle<num> floatingRect,
+  required math.Rectangle<num> clippingRect,
 }) {
-  final host = html.DivElement();
+  final host = web.document.createElement('div') as web.HTMLDivElement;
   host.style.position = 'fixed';
   host.style.left = '0';
   host.style.top = '0';
@@ -16,25 +16,26 @@ PopperDebugCleanup paintPopperDebugRects({
   host.style.pointerEvents = 'none';
   host.style.zIndex = '2147483647';
 
-  host.children.addAll(<html.Element>[
-    _buildDebugRect(referenceRect, 'rgba(27, 94, 32, 0.14)', '#1b5e20'),
-    _buildDebugRect(floatingRect, 'rgba(13, 71, 161, 0.14)', '#0d47a1'),
-    _buildDebugRect(clippingRect, 'rgba(183, 28, 28, 0.08)', '#b71c1c'),
-  ]);
+  host.appendChild(
+      _buildDebugRect(referenceRect, 'rgba(27, 94, 32, 0.14)', '#1b5e20'));
+  host.appendChild(
+      _buildDebugRect(floatingRect, 'rgba(13, 71, 161, 0.14)', '#0d47a1'));
+  host.appendChild(
+      _buildDebugRect(clippingRect, 'rgba(183, 28, 28, 0.08)', '#b71c1c'));
 
-  html.document.body?.append(host);
+  web.document.body?.appendChild(host);
 
   return () {
     host.remove();
   };
 }
 
-html.DivElement _buildDebugRect(
-  html.Rectangle<num> rect,
+web.HTMLDivElement _buildDebugRect(
+  math.Rectangle<num> rect,
   String backgroundColor,
   String borderColor,
 ) {
-  final element = html.DivElement();
+  final element = web.document.createElement('div') as web.HTMLDivElement;
   element.style.position = 'fixed';
   element.style.left = '${rect.left.toDouble()}px';
   element.style.top = '${rect.top.toDouble()}px';
