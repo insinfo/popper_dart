@@ -1,4 +1,4 @@
-## 2.0.0
+## 2.0.0-dev.1
 
 - **BREAKING**: Migrated from `dart:html` to `package:web` + `dart:js_interop`. Every element in the public API (`PopperController`, `PopperPortal`, `PopperAnchoredOverlay`, `computePosition`, `computePopperLayout`, `PopperOptions.arrowElement`, `arrowMiddleware`, and the `layoutWriter`/`arrowLayoutWriter`/`anchorRectBuilder` callbacks) is now typed as `package:web` `Element`/`HTMLDivElement`/`CSSStyleDeclaration` instead of the `dart:html` equivalents. On the JS backends a `dart:html` element wraps the same underlying JS object, so consumers still on `dart:html` can bridge with an unsafe cast (`htmlElement as web.Element`) while they migrate.
 - Rectangle types in the API (`PopperLayout.referenceRect`, `PopperRects`, `anchorRectBuilder`, `detectOverflow`, ...) are unchanged: they were always `dart:math`'s `Rectangle<num>` (re-exported by `dart:html`) and now reference `dart:math` directly.
