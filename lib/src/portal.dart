@@ -1,9 +1,9 @@
 part of '../popper.dart';
 
 class PopperPortal {
-  final html.DivElement hostElement;
-  final html.Element floatingElement;
-  final html.Element? _originalParent;
+  final web.HTMLDivElement hostElement;
+  final web.Element floatingElement;
+  final web.Element? _originalParent;
   final bool _restoreOnDispose;
   final _PopperOwnedState _floatingState;
   bool _disposed = false;
@@ -11,7 +11,7 @@ class PopperPortal {
   PopperPortal._({
     required this.hostElement,
     required this.floatingElement,
-    required html.Element? originalParent,
+    required web.Element? originalParent,
     required bool restoreOnDispose,
     required _PopperOwnedState floatingState,
   })  : _originalParent = originalParent,
@@ -19,10 +19,12 @@ class PopperPortal {
         _floatingState = floatingState;
 
   factory PopperPortal.attach({
-    required html.Element floatingElement,
+    required web.Element floatingElement,
     PopperPortalOptions options = const PopperPortalOptions(),
   }) {
-    final hostElement = html.DivElement()..classes.add(options.hostClassName);
+    final hostElement =
+        web.document.createElement('div') as web.HTMLDivElement;
+    hostElement.classList.add(options.hostClassName);
     hostElement.style.position = 'fixed';
     hostElement.style.left = '0';
     hostElement.style.top = '0';
@@ -31,17 +33,17 @@ class PopperPortal {
     hostElement.style.pointerEvents = 'none';
     hostElement.style.zIndex = options.hostZIndex;
 
-    final originalParent = floatingElement.parent;
+    final originalParent = floatingElement.parentElement;
     final floatingState = _PopperOwnedState.capture(
       floatingElement,
       styleProperties: _popperPortalOwnedStyles,
     );
-    html.document.body?.append(hostElement);
+    web.document.body?.appendChild(hostElement);
 
     floatingElement.style.position = 'fixed';
     floatingElement.style.pointerEvents = 'auto';
     floatingElement.style.zIndex = options.floatingZIndex;
-    hostElement.append(floatingElement);
+    hostElement.appendChild(floatingElement);
 
     return PopperPortal._(
       hostElement: hostElement,
@@ -64,7 +66,7 @@ class PopperPortal {
     }
 
     if (_restoreOnDispose && _originalParent != null) {
-      _originalParent.append(floatingElement);
+      _originalParent.appendChild(floatingElement);
     }
     if (restoreFloatingState) {
       _floatingState.restore();
@@ -85,8 +87,8 @@ class PopperAnchoredOverlay {
   });
 
   factory PopperAnchoredOverlay.attach({
-    required html.Element referenceElement,
-    required html.Element floatingElement,
+    required web.Element referenceElement,
+    required web.Element floatingElement,
     PopperOptions popperOptions = const PopperOptions(),
     PopperPortalOptions portalOptions = const PopperPortalOptions(),
   }) {

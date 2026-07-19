@@ -3,8 +3,8 @@ part of '../popper.dart';
 const int _maxResetCount = 50;
 
 Future<PopperComputeResult> computePosition({
-  required html.Element referenceElement,
-  required html.Element floatingElement,
+  required web.Element referenceElement,
+  required web.Element floatingElement,
   String placement = 'bottom',
   PopperStrategy strategy = PopperStrategy.absolute,
   List<PopperMiddleware> middleware = const <PopperMiddleware>[],
@@ -29,8 +29,8 @@ Future<PopperComputeResult> computePosition({
 }
 
 Future<PopperLayout> computePopperLayout({
-  required html.Element referenceElement,
-  required html.Element floatingElement,
+  required web.Element referenceElement,
+  required web.Element floatingElement,
   PopperOptions options = const PopperOptions(),
 }) async {
   final middleware = _buildMiddleware(options);
@@ -113,8 +113,8 @@ Future<PopperLayout> computePopperLayout({
 }
 
 Future<PopperMiddlewareState> _runMiddlewarePipeline({
-  required html.Element referenceElement,
-  required html.Element floatingElement,
+  required web.Element referenceElement,
+  required web.Element floatingElement,
   required String placement,
   required PopperStrategy strategy,
   required PopperOptions options,
@@ -222,9 +222,9 @@ Future<PopperMiddlewareState> _runMiddlewarePipeline({
   return state;
 }
 
-html.Rectangle<num> _resolveReferenceRect({
-  required html.Element referenceElement,
-  required html.Element floatingElement,
+math.Rectangle<num> _resolveReferenceRect({
+  required web.Element referenceElement,
+  required web.Element floatingElement,
   required PopperOptions options,
 }) {
   final customRect =
@@ -282,8 +282,8 @@ List<PopperMiddleware> _buildMiddleware(PopperOptions options) {
 
 double _computeAvailableWidth({
   required double viewportX,
-  required html.Rectangle<num> floatingRect,
-  required html.Rectangle<num> clippingRect,
+  required math.Rectangle<num> floatingRect,
+  required math.Rectangle<num> clippingRect,
   required PopperInsets padding,
 }) {
   final minX = clippingRect.left.toDouble() + padding.left;
@@ -298,8 +298,8 @@ double _computeAvailableWidth({
 
 double _computeAvailableHeight({
   required double viewportY,
-  required html.Rectangle<num> floatingRect,
-  required html.Rectangle<num> clippingRect,
+  required math.Rectangle<num> floatingRect,
+  required math.Rectangle<num> clippingRect,
   required PopperInsets padding,
 }) {
   final minY = clippingRect.top.toDouble() + padding.top;

@@ -3,8 +3,8 @@ part of '../../popper.dart';
 math.Point<double> _shiftWithinClippingRect({
   required double x,
   required double y,
-  required html.Rectangle<num> floatingRect,
-  required html.Rectangle<num> clippingRect,
+  required math.Rectangle<num> floatingRect,
+  required math.Rectangle<num> clippingRect,
   required String placement,
   required PopperInsets padding,
   required bool shiftCrossAxis,

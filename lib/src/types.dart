@@ -64,9 +64,9 @@ class PopperLayout {
   final double viewportY;
   final String placement;
   final PopperStrategy strategy;
-  final html.Rectangle<num> referenceRect;
-  final html.Rectangle<num> floatingRect;
-  final html.Rectangle<num> clippingRect;
+  final math.Rectangle<num> referenceRect;
+  final math.Rectangle<num> floatingRect;
+  final math.Rectangle<num> clippingRect;
   final double availableWidth;
   final double availableHeight;
   final double overflowTop;
@@ -122,18 +122,18 @@ class PopperLayout {
 }
 
 typedef PopperLayoutCallback = void Function(PopperLayout layout);
-typedef PopperAnchorRectBuilder = html.Rectangle<num> Function(
-  html.Element referenceElement,
-  html.Element floatingElement,
+typedef PopperAnchorRectBuilder = math.Rectangle<num> Function(
+  web.Element referenceElement,
+  web.Element floatingElement,
 );
 typedef PopperLayoutWriter = void Function(
   PopperLayout layout,
-  html.Element floatingElement,
-  html.Element? arrowElement,
+  web.Element floatingElement,
+  web.Element? arrowElement,
 );
 typedef PopperArrowLayoutWriter = void Function(
   PopperLayout layout,
-  html.Element arrowElement,
+  web.Element arrowElement,
 );
 
 class PopperComputeResult {
@@ -159,8 +159,8 @@ typedef PopperMiddlewareExecutor = FutureOr<PopperMiddlewareResult> Function(
 );
 
 class PopperRects {
-  html.Rectangle<num> reference;
-  html.Rectangle<num> floating;
+  math.Rectangle<num> reference;
+  math.Rectangle<num> floating;
 
   PopperRects({
     required this.reference,
@@ -207,8 +207,8 @@ class PopperMiddleware {
 }
 
 class PopperMiddlewareState {
-  final html.Element referenceElement;
-  final html.Element floatingElement;
+  final web.Element referenceElement;
+  final web.Element floatingElement;
   final String initialPlacement;
   final PopperStrategy strategy;
   final PopperOptions options;
@@ -219,7 +219,7 @@ class PopperMiddlewareState {
   double y;
   String placement;
   PopperRects rects;
-  html.Rectangle<num> clippingRect;
+  math.Rectangle<num> clippingRect;
 
   PopperMiddlewareState({
     required this.referenceElement,
@@ -271,7 +271,7 @@ class PopperOptions {
   final bool hideWhenDetached;
   final bool roundByDevicePixelRatio;
   final bool observeMutations;
-  final html.Element? arrowElement;
+  final web.Element? arrowElement;
   final PopperInsets arrowPadding;
   final PopperArrowWriteMode arrowWriteMode;
   final PopperAnchorRectBuilder? anchorRectBuilder;
@@ -328,7 +328,7 @@ class PopperOptions {
     bool? hideWhenDetached,
     bool? roundByDevicePixelRatio,
     bool? observeMutations,
-    html.Element? arrowElement,
+    web.Element? arrowElement,
     bool clearArrowElement = false,
     PopperInsets? arrowPadding,
     PopperArrowWriteMode? arrowWriteMode,

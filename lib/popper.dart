@@ -1,7 +1,9 @@
 import 'dart:async';
-import 'dart:html' as html;
-import 'dart:js_util' as js_util;
+import 'dart:js_interop';
+import 'dart:js_interop_unsafe';
 import 'dart:math' as math;
+
+import 'package:web/web.dart' as web;
 
 part 'src/types.dart';
 part 'src/constants.dart';

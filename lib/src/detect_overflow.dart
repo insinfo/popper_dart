@@ -73,13 +73,13 @@ PopperInsets detectOverflow(
             );
 
   return _overflowForRect(
-    targetRect: html.Rectangle<num>(
+    targetRect: math.Rectangle<num>(
       candidatePosition.x,
       candidatePosition.y,
       state.rects.floating.width,
       state.rects.floating.height,
     ),
-    clippingRect: html.Rectangle<num>(
+    clippingRect: math.Rectangle<num>(
       clippingRect.left + options.padding.left,
       clippingRect.top + options.padding.top,
       math.max(
@@ -97,8 +97,8 @@ PopperInsets detectOverflow(
 _PopperOverflow _detectOverflow({
   required double x,
   required double y,
-  required html.Rectangle<num> floatingRect,
-  required html.Rectangle<num> clippingRect,
+  required math.Rectangle<num> floatingRect,
+  required math.Rectangle<num> clippingRect,
   required PopperInsets padding,
 }) {
   final paddedLeft = clippingRect.left.toDouble() + padding.left;
@@ -122,9 +122,9 @@ _PopperOverflow _detectOverflow({
 }
 
 _PopperVisibilityState _computeVisibilityState({
-  required html.Rectangle<num> referenceRect,
-  required html.Rectangle<num> floatingRect,
-  required html.Rectangle<num> clippingRect,
+  required math.Rectangle<num> referenceRect,
+  required math.Rectangle<num> floatingRect,
+  required math.Rectangle<num> clippingRect,
   required double viewportX,
   required double viewportY,
 }) {
@@ -133,7 +133,7 @@ _PopperVisibilityState _computeVisibilityState({
     clippingRect: clippingRect,
   );
   final floatingOverflow = _overflowForRect(
-    targetRect: html.Rectangle<num>(
+    targetRect: math.Rectangle<num>(
       viewportX,
       viewportY,
       floatingRect.width,
@@ -149,8 +149,8 @@ _PopperVisibilityState _computeVisibilityState({
 }
 
 PopperInsets _overflowForRect({
-  required html.Rectangle<num> targetRect,
-  required html.Rectangle<num> clippingRect,
+  required math.Rectangle<num> targetRect,
+  required math.Rectangle<num> clippingRect,
 }) {
   final targetLeft = targetRect.left.toDouble();
   final targetTop = targetRect.top.toDouble();
@@ -171,7 +171,7 @@ PopperInsets _overflowForRect({
 
 bool _isAnySideFullyClipped(
   PopperInsets overflow,
-  html.Rectangle<num> rect,
+  math.Rectangle<num> rect,
 ) {
   return overflow.top >= rect.height.toDouble() ||
       overflow.right >= rect.width.toDouble() ||

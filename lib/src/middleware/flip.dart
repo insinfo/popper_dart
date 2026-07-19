@@ -2,8 +2,8 @@ part of '../../popper.dart';
 
 List<String> _expandAutoPlacement({
   required _PlacementParts requestedPlacement,
-  required html.Rectangle<num> referenceRect,
-  required html.Rectangle<num> clippingRect,
+  required math.Rectangle<num> referenceRect,
+  required math.Rectangle<num> clippingRect,
   required List<String> allowedPlacements,
 }) {
   if (requestedPlacement.basePlacement != _placementAuto) {
@@ -55,8 +55,8 @@ List<String> _expandAutoPlacement({
 
 double _scoreAutoPlacement({
   required String placement,
-  required html.Rectangle<num> referenceRect,
-  required html.Rectangle<num> clippingRect,
+  required math.Rectangle<num> referenceRect,
+  required math.Rectangle<num> clippingRect,
 }) {
   final parts = _parsePlacement(placement);
   final clippingLeft = clippingRect.left.toDouble();
