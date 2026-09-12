@@ -357,6 +357,53 @@ void main() {
     );
   });
 
+  test('painel no body mais largo que a coluna da referencia fica no viewport',
+      () async {
+    // Uma coluna estreita com rolagem — o corpo de um offcanvas à direita —
+    // e um painel de dois meses, mais largo que a coluna, portalado ao body.
+    // O recorte é do flutuante, não da referência: o painel se desloca para
+    // caber no viewport em vez de ser espremido na coluna e sair da tela.
+    final viewportWidth = web.window.innerWidth.toDouble();
+    final column = mountBox(
+      left: viewportWidth - 300,
+      top: 0,
+      width: 300,
+      height: 400,
+      extraStyle: 'overflow-y: auto; border: 0;',
+    );
+    final reference = mountChild(
+      column,
+      left: 10,
+      top: 40,
+      width: 200,
+      height: 30,
+    );
+    final floating = mountBox(
+      left: 0,
+      top: 0,
+      width: 560,
+      height: 200,
+    );
+
+    final layout = await computePopperLayout(
+      referenceElement: reference,
+      floatingElement: floating,
+      options: const PopperOptions(
+        placement: 'bottom-start',
+        strategy: PopperStrategy.fixed,
+        boundary: PopperBoundary.clippingAncestors,
+        padding: PopperInsets.all(8),
+      ),
+    );
+
+    expectClose(layout.clippingRect.width, viewportWidth);
+    expect(layout.viewportX, greaterThanOrEqualTo(0));
+    expect(
+      layout.viewportX + layout.floatingRect.width.toDouble(),
+      lessThanOrEqualTo(viewportWidth + 1),
+    );
+  });
+
   test('inline middleware usa uniao de client rects em referencia multilinha',
       () async {
     final container = mountBox(

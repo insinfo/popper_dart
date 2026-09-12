@@ -233,12 +233,18 @@ math.Rectangle<num> _getClippingRect({
     case PopperBoundary.document:
       return _getDocumentRectInViewportCoords();
     case PopperBoundary.clippingAncestors:
+      // Only the floating element's own overflow ancestors clip it — the
+      // same rule as floating-ui. Until 2.0.0-dev.2 (1.3.1 on the 1.x line)
+      // the reference's ancestors were added to the set, which is wrong for
+      // a floating element portalled to the body: it lives outside those
+      // containers, yet `shift` was squeezing it into them. With a reference
+      // inside a narrow scrolling column (an offcanvas body, say) and a panel
+      // wider than the column, `_clamp` gave up and pinned the panel's left
+      // edge to the column's left edge, pushing it off the right side of the
+      // viewport. When the floating element is inline it shares those
+      // ancestors anyway, so nothing changes there.
       var rect = _getViewportRect();
-      final ancestors = <web.Element>{}
-        ..addAll(_collectClippingAncestors(referenceElement))
-        ..addAll(_collectClippingAncestors(floatingElement));
-
-      for (final ancestor in ancestors) {
+      for (final ancestor in _collectClippingAncestors(floatingElement)) {
         rect = _intersectRects(rect, _getInnerClientRect(ancestor));
       }
       return rect;

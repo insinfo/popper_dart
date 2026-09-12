@@ -1,3 +1,7 @@
+## 2.0.0-dev.2
+
+- Fixed `PopperBoundary.clippingAncestors` clipping the floating element by the reference element's overflow ancestors as well as its own (ported from 1.3.1). The floating element is what gets clipped, so only its ancestors count — the same rule as floating-ui. The extra ancestors were harmless while both elements shared them, but a floating element portalled to the body lives outside the reference's containers, and `shift` was still squeezing it into them: with a reference inside a narrow scrolling column and a panel wider than the column, the clamp gave up and pinned the panel's left edge to the column's left edge, pushing it off the right side of the viewport. Reported with a two-month date range picker opened inside a right-hand offcanvas.
+
 ## 2.0.0-dev.1
 
 - **BREAKING**: Migrated from `dart:html` to `package:web` + `dart:js_interop`. Every element in the public API (`PopperController`, `PopperPortal`, `PopperAnchoredOverlay`, `computePosition`, `computePopperLayout`, `PopperOptions.arrowElement`, `arrowMiddleware`, and the `layoutWriter`/`arrowLayoutWriter`/`anchorRectBuilder` callbacks) is now typed as `package:web` `Element`/`HTMLDivElement`/`CSSStyleDeclaration` instead of the `dart:html` equivalents. On the JS backends a `dart:html` element wraps the same underlying JS object, so consumers still on `dart:html` can bridge with an unsafe cast (`htmlElement as web.Element`) while they migrate.
