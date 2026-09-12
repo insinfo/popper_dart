@@ -1,3 +1,7 @@
+## 1.3.1
+
+- Fixed `PopperBoundary.clippingAncestors` clipping the floating element by the reference element's overflow ancestors as well as its own. The floating element is what gets clipped, so only its ancestors count — the same rule as floating-ui. The extra ancestors were harmless while both elements shared them, but a floating element portalled to the body lives outside the reference's containers, and `shift` was still squeezing it into them: with a reference inside a narrow scrolling column and a panel wider than the column, the clamp gave up and pinned the panel's left edge to the column's left edge, pushing it off the right side of the viewport. Reported with a two-month date range picker opened inside a right-hand offcanvas.
+
 ## 1.3.0
 
 - Fixed the 1.2.0 dispose restore reaching elements popper never wrote to. `PopperController.dispose()` restored the floating element unconditionally, but with a custom `PopperOptions.layoutWriter` the consumer owns those styles — popper only computes the layout and never applies it. Disposing therefore wiped the consumer's own inline styles and `data-popper-placement`, which broke consumers that dispose and recreate a controller on every reposition: the floating element was left unpositioned. `dispose()` now restores only when this controller actually applied a layout itself, so popper undoes just what popper did.
